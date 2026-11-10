@@ -1,6 +1,6 @@
 $ since
 
-  nabuhadba/since-demo-shop  main@b130bbd  scanned 2 min ago
+  since-dev-lab/demo-shop  main@b130bbd  scanned 2 min ago
   3 with a date   1 undated   2 to review   4 dependencies and 7 files read
   Read from GitHub (main), not your working tree.
 
@@ -28,10 +28,10 @@ $ since
 
   Since is reading what changed in 294 newer releases of the direct dependencies now; scan again in a few minutes to include them.
 
-  Full report   https://since.dev/scan/nabuhadba/since-demo-shop?utm_source=cli
+  Full report   https://since.dev/scan/since-dev-lab/demo-shop?utm_source=cli
   Next          npx since-dev init   your coding agent checks before it writes
 --- stderr
-Reading nabuhadba/since-demo-shop on GitHub. A first scan can take a minute.
+Reading this folder's repository (since-dev-lab/demo-shop) on GitHub. A first scan can take a minute.
 --- log
-POST /v1/scan {"repo":"nabuhadba/since-demo-shop"}
+POST /v1/scan {"repo":"since-dev-lab/demo-shop"}
 --- exit 0

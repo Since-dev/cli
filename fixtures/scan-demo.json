@@ -1,6 +1,6 @@
 {
   "args": [],
-  "origin": "https://github.com/nabuhadba/since-demo-shop.git",
+  "origin": "https://github.com/since-dev-lab/demo-shop.git",
   "program": "npx since-dev",
   "now": "2026-11-10T16:25:00.000Z",
   "http": [
@@ -432,11 +432,11 @@
         "scannedAt": "2026-11-10T16:22:45.649Z",
         "truncated": false,
         "repository": {
-          "url": "https://github.com/nabuhadba/since-demo-shop",
-          "repo": "since-demo-shop",
-          "owner": "nabuhadba",
+          "url": "https://github.com/since-dev-lab/demo-shop",
+          "repo": "demo-shop",
+          "owner": "since-dev-lab",
           "headSha": "b130bbde983c5b768eaae173dcb8407f161e315d",
-          "fullName": "nabuhadba/since-demo-shop",
+          "fullName": "since-dev-lab/demo-shop",
           "defaultBranch": "main"
         }
       }

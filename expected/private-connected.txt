@@ -13,7 +13,7 @@ $ since
 
   Next          since init   your coding agent checks before it writes
 --- stderr
-Reading acme/shop on GitHub. A first scan can take a minute.
+Reading this folder's repository (acme/shop) on GitHub. A first scan can take a minute.
 Since is still reading this repository. Trying again in 10 seconds.
 --- log
 POST /v1/scan {"repo":"acme/shop"}

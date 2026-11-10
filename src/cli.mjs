@@ -8,7 +8,7 @@ import { init } from "./init.mjs"
 import { MAX_CHARACTERS, checkBody, findManifests, parseRepo } from "./local.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.1.1"
+export const VERSION = "0.1.2"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
@@ -348,7 +348,8 @@ async function repoCommand(ctx) {
 
   const fullName = `${repo.owner}/${repo.name}`
   // A first scan takes up to a minute, and a silent terminal reads as a hung one.
-  io.err(`Reading ${fullName} on GitHub. A first scan can take a minute.\n`)
+  // Run inside a repository, the name comes from its origin remote: say so, or the name looks like part of the command.
+  io.err(`Reading ${fromTree ? `this folder's repository (${fullName})` : fullName} on GitHub. A first scan can take a minute.\n`)
   const scan = await publicScan(ctx, fullName)
   if (scan.result) return report(ctx, { kind: "scan", result: scan.result, fromTree })
   // The free scan said no (not public, too big, or today's scans are used up): with a key there is still a way to answer

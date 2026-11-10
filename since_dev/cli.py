@@ -425,7 +425,8 @@ def repo_command(ctx):
 
     full_name = "%s/%s" % (repo["owner"], repo["name"])
     # A first scan takes up to a minute, and a silent terminal reads as a hung one.
-    io.err("Reading %s on GitHub. A first scan can take a minute.\n" % full_name)
+    # Run inside a repository, the name comes from its origin remote: say so, or the name looks like part of the command.
+    io.err("Reading %s on GitHub. A first scan can take a minute.\n" % ("this folder's repository (%s)" % full_name if from_tree else full_name))
     scan = public_scan(ctx, full_name)
     if "result" in scan:
         return report(ctx, {"kind": "scan", "result": scan["result"], "fromTree": from_tree})

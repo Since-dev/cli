@@ -34,7 +34,7 @@ $ since
 
   Next          since init   your coding agent checks before it writes
 --- stderr
-Reading acme/shop on GitHub. A first scan can take a minute.
+Reading this folder's repository (acme/shop) on GitHub. A first scan can take a minute.
 This address has run its 10 scans for today. Checking with your key instead.
 --- log
 POST /v1/scan {"repo":"acme/shop"}

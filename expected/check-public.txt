@@ -54,7 +54,7 @@ $ since check
   Full report   https://since.dev/scan/plasma-umass/scalene?utm_source=cli
   Failed        5 findings at high or above
 --- stderr
-Reading plasma-umass/scalene on GitHub. A first scan can take a minute.
+Reading this folder's repository (plasma-umass/scalene) on GitHub. A first scan can take a minute.
 --- log
 POST /v1/scan {"repo":"plasma-umass/scalene"}
 --- exit 1

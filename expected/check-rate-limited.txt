@@ -1,6 +1,6 @@
 $ since check
 --- stderr
-Reading acme/clean on GitHub. A first scan can take a minute.
+Reading this folder's repository (acme/clean) on GitHub. A first scan can take a minute.
 This address has run its 10 scans for today. Try again in 10 minutes. Nothing was checked, so this run passes.
 --- log
 POST /v1/scan {"repo":"acme/clean"}

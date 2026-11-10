@@ -9,7 +9,7 @@ npx since-dev
 Run it inside any repository. A public GitHub repository needs no sign-in and no setup.
 
 ```
-  nabuhadba/since-demo-shop  main@b130bbd  scanned just now
+  since-dev-lab/demo-shop  main@fd7aa13  scanned just now
   3 with a date   1 undated   2 to review   4 dependencies and 7 files read
   Read from GitHub (main), not your working tree.
 
@@ -35,11 +35,11 @@ Run it inside any repository. A public GitHub repository needs no sign-in and no
   review    @anthropic-ai/sdk: 6 changes in newer releases may reach this code
             src/ai/client.ts:9  and 1 more
 
-  Full report   https://since.dev/scan/nabuhadba/since-demo-shop?utm_source=cli
+  Full report   https://since.dev/scan/since-dev-lab/demo-shop?utm_source=cli
   Next          npx since-dev init   your coding agent checks before it writes
 ```
 
-That is the output for [a small demo repository](https://github.com/nabuhadba/since-demo-shop) on November 10, 2026. To see it yourself: `npx since-dev nabuhadba/since-demo-shop`.
+That is the output for [a small demo repository](https://github.com/since-dev-lab/demo-shop) on November 10, 2026. To see it yourself: `npx since-dev since-dev-lab/demo-shop`.
 
 ## Run it
 
