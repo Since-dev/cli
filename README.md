@@ -90,7 +90,7 @@ It only ever adds its own `since` entry. Other servers in those files stay as th
 
 ## What it sends
 
-- **A public GitHub repository:** only its name. Since reads the default branch from GitHub, so uncommitted work and other branches are not in the answer. It is free: 10 scans a day per address, and a scan is kept for an hour.
+- **A public GitHub repository:** only its name. Since reads the default branch from GitHub, so uncommitted work and other branches are not in the answer. It is free: 25 scans a day per address, and a scan is kept for an hour.
 - **A private repository, after `since login`:** if the repository is connected to your Since workspace and your plan includes it, the answer comes from there. Otherwise the CLI sends the manifests it finds in the folder (`package.json`, `requirements*.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `pom.xml`, `build.gradle`, `*.csproj`), 10 at most unless you raise `--max-files`. Source files are never sent. Each manifest is one call to the API, which uses credits.
 - `--local` checks the manifests in the folder even when the repository is public, for work you have not pushed.
 
