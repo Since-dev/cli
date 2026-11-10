@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "since-dev"
-version = "0.1.0"
+version = "0.1.1"
 description = "Find the code in a repository that is about to stop working: retired model IDs, runtimes past end of life, breaking dependency changes. Each with its date, its line and its replacement."
 readme = "README.md"
 requires-python = ">=3.9"

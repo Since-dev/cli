@@ -33,12 +33,19 @@ export function ago(ms) {
 
 const placeOf = (path, line) => (typeof line === "number" && line > 0 ? `${path}:${line}` : String(path))
 
-/** A public scan's findings, as the rows the CLI prints. */
+/**
+ * A public scan's findings, as the rows the CLI prints. A dependency that is a few majors behind can have dozens of
+ * changes Since could not prove reach the code, all at the one line that imports it: those become one row.
+ */
 export function scanItems(findings) {
-  return findings.map((finding) => {
+  const rows = []
+  const groups = new Map()
+  for (const finding of findings) {
     const where = Array.isArray(finding.where) ? finding.where.filter((place) => place && place.path) : []
     const source = finding.source && typeof finding.source === "object" ? finding.source.url : null
-    return {
+    const surface = finding.surface && typeof finding.surface === "object" ? finding.surface : {}
+    const name = String(surface.name || "")
+    const row = {
       title: String(finding.title ?? ""),
       review: finding.state === "needs_review",
       severity: finding.severity,
@@ -47,7 +54,26 @@ export function scanItems(findings) {
       extra: Math.max(0, where.length - 1) + (typeof finding.more === "number" ? finding.more : 0),
       replacement: finding.replacement || null,
       source: source || null,
+      hint: null,
     }
+    if (!row.review || row.daysLeft !== null || !name) {
+      rows.push(row)
+      continue
+    }
+    const key = `${surface.key || name}|${row.place || ""}`
+    const group = groups.get(key)
+    if (group) group.members.push(row)
+    else {
+      const created = { members: [row], name }
+      groups.set(key, created)
+      rows.push(created)
+    }
+  }
+  return rows.map((row) => {
+    if (!row.members) return row
+    if (row.members.length === 1) return row.members[0]
+    const first = row.members[0]
+    return { ...first, title: `${row.name}: ${num(row.members.length)} changes in newer releases may reach this code`, replacement: null, source: null }
   })
 }
 

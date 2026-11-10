@@ -76,15 +76,22 @@ def _join(parts, separator):
 
 
 def scan_items(findings):
-    """A public scan's findings, as the rows the CLI prints."""
-    items = []
+    """A public scan's findings, as the rows the CLI prints.
+
+    A dependency that is a few majors behind can have dozens of changes Since could not prove reach the code, all at
+    the one line that imports it: those become one row.
+    """
+    rows = []
+    groups = {}
     for finding in findings:
         where = finding.get("where")
         where = [place for place in where if isinstance(place, dict) and place.get("path")] if isinstance(where, list) else []
         source = finding.get("source")
         source = source.get("url") if isinstance(source, dict) else None
+        surface = finding["surface"] if isinstance(finding.get("surface"), dict) else {}
+        name = str(surface.get("name") or "")
         title = finding.get("title")
-        items.append({
+        row = {
             "title": "" if title is None else str(title),
             "review": finding.get("state") == "needs_review",
             "severity": finding.get("severity"),
@@ -93,7 +100,25 @@ def scan_items(findings):
             "extra": max(0, len(where) - 1) + (finding["more"] if is_number(finding.get("more")) else 0),
             "replacement": finding.get("replacement") or None,
             "source": source or None,
-        })
+            "hint": None,
+        }
+        if not row["review"] or row["daysLeft"] is not None or not name:
+            rows.append(row)
+            continue
+        key = "%s|%s" % (surface.get("key") or name, row["place"] or "")
+        if key in groups:
+            groups[key]["members"].append(row)
+        else:
+            groups[key] = {"members": [row], "name": name}
+            rows.append(groups[key])
+    items = []
+    for row in rows:
+        if "members" not in row:
+            items.append(row)
+        elif len(row["members"]) == 1:
+            items.append(row["members"][0])
+        else:
+            items.append(dict(row["members"][0], title="%s: %s changes in newer releases may reach this code" % (row["name"], num(len(row["members"]))), replacement=None, source=None))
     return items
 
 

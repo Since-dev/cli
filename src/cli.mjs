@@ -8,7 +8,7 @@ import { init } from "./init.mjs"
 import { MAX_CHARACTERS, checkBody, findManifests, parseRepo } from "./local.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.1.0"
+export const VERSION = "0.1.1"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"

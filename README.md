@@ -9,12 +9,12 @@ npx since-dev
 Run it inside any repository. A public GitHub repository needs no sign-in and no setup.
 
 ```
-  acme/shop  main@4f2c1d9  scanned just now
-  3 with a date   1 undated   214 dependencies and 96 files read
+  nabuhadba/since-demo-shop  main@b130bbd  scanned just now
+  3 with a date   1 undated   2 to review   4 dependencies and 7 files read
   Read from GitHub (main), not your working tree.
 
   20 days   claude-sonnet-4-5-20250929 on Claude API: retirement 2026-11-30
-            src/ai/client.ts:14  and 3 more   use claude-sonnet-5-5
+            src/ai/client.ts:6  and 1 more   use claude-sonnet-5-5
             https://platform.claude.com/docs/en/about-claude/model-deprecations
 
   31 days   gpt-5 on OpenAI API: retirement 2026-12-11
@@ -25,11 +25,21 @@ Run it inside any repository. A public GitHub repository needs no sign-in and no
             .github/workflows/ci.yml   use 24
             https://endoflife.date/nodejs
 
-  Full report   https://since.dev/scan/acme/shop?utm_source=cli
+  medium    GHSA-qw6h-vgh9-j6wx: express vulnerable to XSS via response.redirect()
+            src/server.ts:1   use 4.20.0
+            https://osv.dev/vulnerability/GHSA-qw6h-vgh9-j6wx
+
+  review    openai: 27 changes in newer releases may reach this code
+            src/ai/summarize.ts:7
+
+  review    @anthropic-ai/sdk: 6 changes in newer releases may reach this code
+            src/ai/client.ts:9  and 1 more
+
+  Full report   https://since.dev/scan/nabuhadba/since-demo-shop?utm_source=cli
   Next          npx since-dev init   your coding agent checks before it writes
 ```
 
-(An example for a made-up repository. The dates are the real ones as of November 10, 2026.)
+That is the output for [a small demo repository](https://github.com/nabuhadba/since-demo-shop) on November 10, 2026. To see it yourself: `npx since-dev nabuhadba/since-demo-shop`.
 
 ## Run it
 
@@ -55,7 +65,7 @@ To keep it, `npm install -g since-dev` or `pip install since-dev` gives you the 
 
 `--all` shows every finding (10 by default), `--json` prints the answer as JSON, `--within 30d` keeps only dates within that many days.
 
-Findings are listed with the next deadline first, then dates that have passed, then security advisories with no date, then the ones marked `review`: Since found the name in your code but could not prove the change reaches it.
+Findings are listed with the next deadline first, then dates that have passed, then security advisories with no date, then the ones marked `review`: Since found the name in your code but could not prove the change reaches it. When a dependency has many of those at one line, they print as one row with the count.
 
 ## Set up your coding agent
 
