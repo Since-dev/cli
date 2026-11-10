@@ -205,8 +205,13 @@ def refuse(ctx, answer):
 
 
 def public_scan(ctx, full_name):
-    """The free scan of a public GitHub repository. A busy answer is waited out up to three times."""
+    """The free scan of a public GitHub repository. A busy answer is waited out up to three times.
+
+    A connection that drops is asked again twice: a long scan can outlast a connection, and asking again costs nothing,
+    since a scan still running is joined and a finished one is served.
+    """
     waits = 0
+    drops = 0
     while True:
         answer = call(ctx, "POST", "/v1/scan", body={"repo": full_name})
         if answer["status"] == 200 and answer["json"] is not None and isinstance(answer["json"].get("repository"), dict):
@@ -216,6 +221,10 @@ def public_scan(ctx, full_name):
             ctx["io"].err("Since is busy. Trying again in %s.\n" % text.wait(seconds))
             ctx["io"].sleep(seconds * 1000)
             waits += 1
+            continue
+        if answer["status"] == 0 and drops < 2:
+            drops += 1
+            ctx["io"].err("The connection dropped before the answer came. Asking again.\n")
             continue
         return {"answer": answer}
 

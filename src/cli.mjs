@@ -8,7 +8,7 @@ import { init } from "./init.mjs"
 import { MAX_CHARACTERS, checkBody, findManifests, parseRepo } from "./local.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.1.2"
+export const VERSION = "0.1.3"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
@@ -164,15 +164,27 @@ function refuse(ctx, answer) {
   return check ? 2 : 1
 }
 
-/** The free scan of a public GitHub repository. A busy answer is waited out up to three times. */
+/**
+ * The free scan of a public GitHub repository. A busy answer is waited out up to three times. A connection that drops is
+ * asked again twice: a long scan can outlast a connection, and asking again costs nothing, since a scan still running is
+ * joined and a finished one is served.
+ */
 async function publicScan(ctx, fullName) {
-  for (let waits = 0; ; waits++) {
+  let waits = 0
+  let drops = 0
+  for (;;) {
     const answer = await call(ctx, "POST", "/v1/scan", { body: { repo: fullName } })
     if (answer.status === 200 && answer.json && isObject(answer.json.repository)) return { result: answer.json }
     if (answer.status === 503 && errorOf(answer) === "busy" && waits < 3) {
+      waits += 1
       const seconds = clamp(answer.retryAfter ?? 20, 1, 60)
       ctx.io.err(`Since is busy. Trying again in ${text.wait(seconds)}.\n`)
       await ctx.io.sleep(seconds * 1000)
+      continue
+    }
+    if (answer.status === 0 && drops < 2) {
+      drops += 1
+      ctx.io.err("The connection dropped before the answer came. Asking again.\n")
       continue
     }
     return { answer }

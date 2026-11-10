@@ -7,6 +7,14 @@
     {
       "request": "POST /v1/scan",
       "fail": true
+    },
+    {
+      "request": "POST /v1/scan",
+      "fail": true
+    },
+    {
+      "request": "POST /v1/scan",
+      "fail": true
     }
   ]
 }
