@@ -103,6 +103,17 @@ function mergeRows(group, program) {
 }
 
 /**
+ * A check words a model finding as a lead-in and then the change ("Names a model this change affects. gpt-5 on OpenAI API:
+ * retirement 2026-12-11."). A row's title is the change itself, as a public scan titles it.
+ */
+const LEAD_IN = "Names a model this change affects. "
+function changeOf(reason) {
+  if (!reason.startsWith(LEAD_IN) || reason.length === LEAD_IN.length) return reason
+  const rest = reason.slice(LEAD_IN.length)
+  return rest.endsWith(".") ? rest.slice(0, -1) : rest
+}
+
+/**
  * A keyed check's findings as the same rows. They carry no title, so one is built from the name, the version and the reason.
  * A manifest check answers with every recorded change between the pinned version and the latest, hundreds for an old pin:
  * the undated ones about one dependency at one place become one row, and `since changed` lists them.
@@ -115,7 +126,7 @@ export function checkItems(findings, fallbackPath, program) {
     const name = String(surface.name || "")
     const version = finding.version || null
     const subject = [name, version].filter(Boolean).join(" ")
-    const reason = String(finding.reason ?? "").trim()
+    const reason = changeOf(String(finding.reason ?? "").trim())
     const where = Array.isArray(finding.where) ? finding.where.filter((place) => place && place.file) : []
     const first = where.length ? placeOf(where[0].file, where[0].line) : fallbackPath
     const source = finding.source && typeof finding.source === "object" ? finding.source.url : finding.source

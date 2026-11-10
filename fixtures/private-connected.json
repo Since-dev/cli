@@ -72,7 +72,7 @@
             "version": null,
             "state": "affected",
             "severity": "critical",
-            "reason": "claude-sonnet-4-5-20250929 is retired on 2026-11-30 on the Claude API.",
+            "reason": "Names a model this change affects. claude-sonnet-4-5-20250929 on Claude API: retirement 2026-11-30.",
             "replacement": "claude-sonnet-5-5",
             "effectiveDate": "2026-11-30",
             "daysLeft": 20,

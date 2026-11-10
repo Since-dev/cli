@@ -1,5 +1,5 @@
 $ since --help
-since-dev 0.1.3: what in this repository is about to stop working
+since-dev 0.1.4: what in this repository is about to stop working
 
 Usage
   npx since-dev                     check this repository (reads the origin remote)

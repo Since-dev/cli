@@ -156,6 +156,17 @@ def _merge_rows(group, program):
     }
 
 
+LEAD_IN = "Names a model this change affects. "
+
+
+def _change_of(reason):
+    """A check words a model finding as a lead-in and then the change; a row's title is the change itself."""
+    if not reason.startswith(LEAD_IN) or len(reason) == len(LEAD_IN):
+        return reason
+    rest = reason[len(LEAD_IN):]
+    return rest[:-1] if rest.endswith(".") else rest
+
+
 def check_items(findings, fallback_path, program):
     """A keyed check's findings as the same rows. They carry no title, so one is built from the name, the version and the reason.
 
@@ -170,7 +181,7 @@ def check_items(findings, fallback_path, program):
         version = finding.get("version") or None
         subject = _join([name, version], " ")
         reason = finding.get("reason")
-        reason = ("" if reason is None else str(reason)).strip()
+        reason = _change_of(("" if reason is None else str(reason)).strip())
         where = finding.get("where")
         where = [place for place in where if isinstance(place, dict) and place.get("file")] if isinstance(where, list) else []
         first = _place_of(where[0]["file"], where[0].get("line")) if where else fallback_path

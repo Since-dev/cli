@@ -3,7 +3,7 @@ $ since
   Acme/Shop  main  connected repository
   1 with a date   1 undated   214 checked
 
-  20 days   claude-sonnet-4-5-20250929 is retired on 2026-11-30 on the Claude API.
+  20 days   claude-sonnet-4-5-20250929 on Claude API: retirement 2026-11-30
             src/ai/client.ts:14  and 3 more   use claude-sonnet-5-5
             https://platform.claude.com/docs/en/about-claude/model-deprecations
 
