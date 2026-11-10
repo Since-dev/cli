@@ -1,5 +1,5 @@
 # Publishes the same version to npm and PyPI when a tag like v0.1.1 is pushed. Neither job holds a token:
-# both registries trust this workflow of this repository (trusted publishing).
+# both registries trust this workflow of this repository (trusted publishing). A rerun publishes only what is missing.
 name: Release
 on:
   push:
@@ -10,11 +10,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: node --test test.mjs
@@ -31,13 +31,22 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
       - run: npm install -g npm@latest
-      - run: npm publish --access public
+      - name: Publish, unless this version is already there
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if npm view "since-dev@$version" version >/dev/null 2>&1; then
+            echo "::notice::since-dev $version is already on npm"
+          elif ! npm view since-dev name >/dev/null 2>&1; then
+            echo "::notice::since-dev is not on npm yet. npm trusts a workflow only for a package that exists, so the first publish is by hand."
+          else
+            npm publish --access public
+          fi
   pypi:
     needs: test
     runs-on: ubuntu-latest
@@ -46,10 +55,12 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: python -m pip install build
       - run: python -m build
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
