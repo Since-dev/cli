@@ -1,0 +1,24 @@
+$ since login --email dev@example.com
+
+  Open this link to approve the sign-in:
+    https://app.since.dev/agent?user_code=WXYZ1234
+  Code: WXYZ-1234
+
+  Signed in. The key is stored in /home/dev/.config/since/credentials.json
+
+--- log
+POST /v1/agent/register {"client_name":"since-cli","email":"dev@example.com"}
+sleep 5000
+POST /v1/agent/token {"claim_token":"fixture-claim-token"}
+sleep 5000
+POST /v1/agent/token {"claim_token":"fixture-claim-token"}
+sleep 10000
+POST /v1/agent/token {"claim_token":"fixture-claim-token"}
+--- wrote /home/dev/.config/since/credentials.json mode 600
+{
+  "api": "https://api.since.dev",
+  "api_key": "fixture-key",
+  "key_name": "Agent",
+  "key_prefix": "fixture"
+}
+--- exit 0

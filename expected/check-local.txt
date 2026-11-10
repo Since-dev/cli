@@ -1,0 +1,39 @@
+$ since check
+
+  This folder  2 manifests checked
+  2 with a date   5 undated   7 checked
+
+  passed    numpy 1.25.0: NumPy 1.25: end of life 2025-06-18; move to 2.4
+            services/worker/pyproject.toml:4   use 2.4
+            https://endoflife.date/numpy
+
+  passed    Node.js 18: end of life 2025-04-30; move to 24
+            package.json:3   use 24
+            https://endoflife.date/nodejs
+
+  medium    openai 4.20.0: 3 changes between this version and the latest
+            package.json:7   list them: since changed openai --since 4.20.0
+
+  medium    express 4.19.2: 2 changes between this version and the latest
+            package.json:6   list them: since changed express --since 4.19.2
+
+  medium    request is deprecated on npm. Applies to every version of request.
+            package.json:5
+            https://www.npmjs.com/package/request
+
+  medium    numpy 1.25.0: 2 changes between this version and the latest
+            services/worker/pyproject.toml:4   list them: since changed numpy --since 1.25.0 --ecosystem pypi
+
+  medium    pydantic 1.10.13: 2 changes between this version and the latest
+            services/worker/pyproject.toml:4   list them: since changed pydantic --since 1.10.13 --ecosystem pypi
+
+  Since is reading 287 newer releases now. Run this again in a few minutes to include them.
+  The answer was cut short: there are more findings than one answer holds.
+  Not fully checked yet: npm:openai@4.20.0, pypi:pydantic@1.10.13, pypi:numpy@1.25.0. --json says why.
+  Only manifests were checked. Connect the repository to check its code too: https://app.since.dev?utm_source=cli
+
+  Failed        2 findings at high or above
+--- log
+POST /v1/check key {"detail":"summary","manifest":{"content":"{\n  \"name\": \"shop\",\n  \"engines\": { \"node\": \"18\" },\n  \"dependencies\": {\n    \"request\": \"2.88.2\",\n    \"express\": \"4.19.2\",\n    \"openai\": \"4.20.0\"\n  }\n}\n","path":"package.json"}}
+POST /v1/check key {"detail":"summary","manifest":{"content":"[project]\nname = \"worker\"\nrequires-python = \">=3.8\"\ndependencies = [\"pydantic==1.10.13\", \"numpy==1.25.0\"]\n","path":"services/worker/pyproject.toml"}}
+--- exit 1

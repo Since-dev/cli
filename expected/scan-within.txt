@@ -1,0 +1,42 @@
+$ since --within 30d
+
+  plasma-umass/scalene  master@d5b59af  scanned 20 min ago
+  5 with a date   1 to review   247 dependencies and 377 files read
+  Read from GitHub (master), not your working tree.
+
+  20 days   claude-sonnet-4-5-20250929 on Claude API: retirement 2026-11-30
+            scalene/scalene-gui/anthropic.ts:30   use claude-sonnet-5-5
+            https://platform.claude.com/docs/en/about-claude/model-deprecations
+
+  passed    gpt-4 on OpenAI API: retirement 2026-10-23
+            scalene/scalene-gui/openai.ts:150  and 1 more   use gpt-5.6-sol
+            https://developers.openai.com/api/docs/deprecations
+
+  passed    gemini-2.0-flash on Gemini API: retirement no sooner than 2026-06-01
+            scalene/scalene-gui/gemini.ts:48   use gemini-3.6-flash
+            https://ai.google.dev/gemini-api/docs/deprecations
+
+  passed    Python 3.9: end of life 2025-10-31
+            .github/workflows/build-and-upload.yml
+            https://endoflife.date/python
+
+  passed    NumPy 1.25: end of life 2025-06-18
+            test/automatic/dataframe/dataframe-select-optimized.py:2  and 18 more   use 2.4.6
+            https://endoflife.date/numpy
+
+  review    gemini-2.0-flash on Vertex AI: retirement no sooner than 2026-06-01
+            scalene/scalene-gui/gemini.ts:48   use gemini-3.5-flash-lite
+            https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions
+
+  1 file is over the scanner's per-file limit and was not read.
+  setup.py: Since does not read this manifest format yet.
+  3 packages are being read from their registries now; scan again in a few minutes to include them.
+  Since is reading what changed in 1,108 newer releases of the direct dependencies now; scan again in a few minutes to include them.
+
+  Full report   https://since.dev/scan/plasma-umass/scalene?utm_source=cli
+  Next          since init   your coding agent checks before it writes
+--- stderr
+Reading plasma-umass/scalene on GitHub. A first scan can take a minute.
+--- log
+POST /v1/scan {"repo":"plasma-umass/scalene"}
+--- exit 0

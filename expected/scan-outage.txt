@@ -1,0 +1,7 @@
+$ since acme/clean
+--- stderr
+Reading acme/clean on GitHub. A first scan can take a minute.
+Since could not be reached. Try again in a minute.
+--- log
+POST /v1/scan {"repo":"acme/clean"}
+--- exit 1

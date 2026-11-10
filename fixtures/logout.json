@@ -1,0 +1,10 @@
+{
+  "args": [
+    "logout"
+  ],
+  "files": {
+    "/home/dev/.config/since/credentials.json": "{\n  \"api\": \"https://api.since.dev\",\n  \"api_key\": \"fixture-key\",\n  \"key_name\": \"Agent\",\n  \"key_prefix\": \"fixture\"\n}\n"
+  },
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": []
+}

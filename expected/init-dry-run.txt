@@ -1,0 +1,12 @@
+$ since init --dry-run
+
+  Would update  .mcp.json           Claude Code
+  Unchanged     .cursor/mcp.json    Cursor
+  Skipped       .vscode/mcp.json    VS Code
+  Would update  AGENTS.md           the rule every coding agent reads
+
+  .vscode/mcp.json is not plain JSON, so it was left alone. Add this under "servers" by hand:
+    "since": {"type":"http","url":"https://api.since.dev/mcp"}
+
+  Nothing was written. Run since init to write them.
+--- exit 0

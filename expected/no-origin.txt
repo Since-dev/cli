@@ -1,0 +1,4 @@
+$ since
+--- stderr
+This folder has no GitHub origin. Name a public repository, as since owner/repo, or sign in to check the files here: since login
+--- exit 1

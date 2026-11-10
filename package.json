@@ -1,0 +1,16 @@
+{
+  "name": "since-dev",
+  "version": "0.1.0",
+  "description": "Find the code in a repository that is about to stop working: retired model IDs, runtimes past end of life, breaking dependency changes. Each with its date, its line and its replacement.",
+  "license": "MIT",
+  "author": "Nabil A <support@since.dev>",
+  "homepage": "https://since.dev",
+  "repository": { "type": "git", "url": "git+https://github.com/Since-dev/cli.git" },
+  "bugs": { "url": "https://github.com/Since-dev/cli/issues" },
+  "keywords": ["deprecation", "end-of-life", "breaking-changes", "dependencies", "ai-models", "mcp", "cli", "continuous-maintenance"],
+  "type": "module",
+  "bin": { "since": "bin/since.mjs", "since-dev": "bin/since.mjs" },
+  "files": ["bin", "src", "README.md", "LICENSE"],
+  "engines": { "node": ">=18" },
+  "scripts": { "test": "node --test test.mjs" }
+}

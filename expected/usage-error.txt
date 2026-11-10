@@ -1,0 +1,5 @@
+$ since check --fail-on urgent
+--- stderr
+--fail-on takes low, medium, high, critical or none.
+Run since --help for the commands.
+--- exit 2

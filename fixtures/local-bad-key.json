@@ -1,0 +1,25 @@
+{
+  "args": [
+    "--local"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "files": {
+    "package.json": "{\n  \"name\": \"shop\",\n  \"engines\": { \"node\": \"18\" },\n  \"dependencies\": {\n    \"request\": \"2.88.2\",\n    \"express\": \"4.19.2\",\n    \"openai\": \"4.20.0\"\n  }\n}\n",
+    "services/worker/pyproject.toml": "[project]\nname = \"worker\"\nrequires-python = \">=3.8\"\ndependencies = [\"pydantic==1.10.13\", \"numpy==1.25.0\"]\n",
+    "node_modules/express/package.json": "{}",
+    "README.md": "# shop\n"
+  },
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/check",
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "message": "Send a valid API key as a Bearer token."
+      }
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+$ since --help
+since-dev 0.1.0: what in this repository is about to stop working
+
+Usage
+  npx since-dev                     check this repository (reads the origin remote)
+  npx since-dev <owner/repo>        check a public GitHub repository
+  npx since-dev check               the same for CI: exit 1 when a finding fails
+  npx since-dev calendar            what ends in the next 30 days
+  npx since-dev changed <package>   breaking changes and deprecations of a package
+  npx since-dev init                set up your coding agent to check before it writes
+  npx since-dev login               sign in, for private repositories
+  npx since-dev logout              remove the stored key
+
+Options
+  --all                show every finding
+  --json               print the answer as JSON
+  --local              check the manifests in this folder, not GitHub
+  --fail-on <level>    check: low, medium, high (default), critical or none
+  --within <days>      only dates within this many days, as 30d
+  --provider <name>    calendar: one provider, as openai
+  --ecosystem <name>   changed: the registry, as npm (default) or pypi
+  --since <version>    changed: only what changed after this version
+  --email <address>    login: the email to sign in with
+  --dry-run            init: show what would be written
+  --max-files <n>      how many manifests to check (default 10)
+  --no-color           plain text
+
+Docs  https://since.dev/docs#cli
+--- exit 0

@@ -1,0 +1,12 @@
+$ since acme/clean
+
+  acme/clean  main@9f1c2ab  scanned just now
+  No findings   57 dependencies and 1 file read
+
+  Full report   https://since.dev/scan/acme/clean?utm_source=cli
+  Next          since init   your coding agent checks before it writes
+--- stderr
+Reading acme/clean on GitHub. A first scan can take a minute.
+--- log
+POST /v1/scan {"repo":"acme/clean"}
+--- exit 0

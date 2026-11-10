@@ -1,0 +1,22 @@
+{
+  "args": [
+    "calendar",
+    "--provider",
+    "mistral",
+    "--within",
+    "7"
+  ],
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "GET /v1/calendar",
+      "status": 200,
+      "body": {
+        "entries": [],
+        "nextCursor": null,
+        "from": "2026-08-12",
+        "generatedAt": "2026-11-10T15:24:34.576Z"
+      }
+    }
+  ]
+}

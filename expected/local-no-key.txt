@@ -1,0 +1,4 @@
+$ since --local
+--- stderr
+Checking the files in this folder needs a key. Sign in first: since login
+--- exit 1

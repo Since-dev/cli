@@ -1,0 +1,13 @@
+{
+  "args": [
+    "init"
+  ],
+  "files": {
+    ".mcp.json": "{\n    \"mcpServers\": {\n        \"github\": {\n            \"command\": \"github-mcp\"\n        }\n    }\n}\n",
+    ".cursor/mcp.json": "{ \"mcpServers\": { \"since\": { \"url\": \"https://api.since.dev/mcp\" } } }\n",
+    ".vscode/mcp.json": "{\n  // local servers\n  \"servers\": {}\n}\n",
+    "AGENTS.md": "# Agents\n\nRun the tests before you commit.\n"
+  },
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": []
+}

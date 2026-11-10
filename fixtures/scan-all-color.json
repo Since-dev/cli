@@ -1,0 +1,388 @@
+{
+  "args": [
+    "https://github.com/Abilityai/trinity",
+    "--all"
+  ],
+  "tty": true,
+  "program": "npx since-dev",
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/scan",
+      "status": 200,
+      "body": {
+        "reading": 0,
+        "summary": {
+          "files": 3285,
+          "findings": 7,
+          "bySeverity": {
+            "low": 0,
+            "medium": 1,
+            "high": 3,
+            "critical": 3,
+            "unknown": 0
+          },
+          "references": 163,
+          "dependencies": 645
+        },
+        "coverage": {
+          "gaps": [
+            {
+              "kind": "not_read",
+              "files": 2,
+              "paths": [
+                "src/frontend/src/components/AgentPermissionsMatrix.vue",
+                "src/frontend/tests/unit/canvasUtils.spec.js"
+              ]
+            },
+            {
+              "kind": "deferred",
+              "files": 2466,
+              "paths": [
+                "src/backend/services/webhook_signature.py",
+                "src/backend/services/ws_identity_service.py",
+                "src/backend/services/ws_ticket_service.py",
+                "src/backend/shared_sessions/__init__.py",
+                "src/backend/shared_sessions/db.py",
+                "src/backend/shared_sessions/models.py",
+                "src/backend/shared_sessions/router.py",
+                "src/backend/shared_sessions/service.py",
+                "src/backend/utils/__init__.py",
+                "src/backend/utils/addressee.py",
+                "src/backend/utils/admin_identity.py",
+                "src/backend/utils/app_version.py",
+                "src/backend/utils/credential_sanitizer.py",
+                "src/backend/utils/helpers.py",
+                "src/backend/utils/host_header.py",
+                "src/backend/utils/image_optimize.py",
+                "src/backend/utils/password_validation.py",
+                "src/backend/utils/public_url.py",
+                "src/backend/utils/safe_yaml.py",
+                "src/backend/utils/skill_invocation.py"
+              ]
+            }
+          ],
+          "notes": [
+            "1,338 files were past the scan's total size limit and were not read.",
+            "src/backend/routers/setup.py: Since does not read this manifest format yet.",
+            "1,128 source files were past the number of files one scan reads and were not read.",
+            "Since is reading what changed in 340 newer releases of the direct dependencies now; scan again in a few minutes to include them."
+          ],
+          "roots": [],
+          "headSha": "30ea76c92a24e023ddfda679081be08751c63323",
+          "complete": false,
+          "languages": [
+            {
+              "files": 2069,
+              "partial": 40,
+              "skipped": 41,
+              "analyzed": 602,
+              "excluded": 0,
+              "language": "Python",
+              "unparsed": 1386
+            },
+            {
+              "files": 654,
+              "partial": 0,
+              "skipped": 2,
+              "analyzed": 0,
+              "excluded": 0,
+              "language": "JavaScript",
+              "unparsed": 652
+            },
+            {
+              "files": 310,
+              "partial": 0,
+              "skipped": 0,
+              "analyzed": 0,
+              "excluded": 0,
+              "language": "Vue",
+              "unparsed": 310
+            },
+            {
+              "files": 119,
+              "partial": 0,
+              "skipped": 0,
+              "analyzed": 0,
+              "excluded": 0,
+              "language": "TypeScript",
+              "unparsed": 119
+            },
+            {
+              "files": 1,
+              "partial": 0,
+              "skipped": 0,
+              "analyzed": 0,
+              "excluded": 0,
+              "language": ".js",
+              "unparsed": 1
+            },
+            {
+              "files": 1,
+              "partial": 0,
+              "skipped": 0,
+              "analyzed": 1,
+              "excluded": 0,
+              "language": "Ruby",
+              "unparsed": 0
+            }
+          ],
+          "detections": {},
+          "ecosystems": [
+            {
+              "gaps": [],
+              "usage": "full",
+              "ecosystem": "github"
+            },
+            {
+              "gaps": [
+                "not_read",
+                "deferred"
+              ],
+              "usage": "partial",
+              "ecosystem": "npm"
+            },
+            {
+              "gaps": [
+                "deferred",
+                "unresolved_import"
+              ],
+              "usage": "partial",
+              "ecosystem": "pypi"
+            }
+          ]
+        },
+        "findings": [
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "active",
+            "title": "claude-3-sonnet-20240229 on Claude API: retirement 2025-07-21",
+            "where": [
+              {
+                "line": 188,
+                "path": "src/backend/services/ops_costs_service.py"
+              }
+            ],
+            "reason": "Names a model this change affects. claude-3-sonnet-20240229 on Claude API: retirement 2025-07-21.",
+            "source": {
+              "url": "https://platform.claude.com/docs/en/about-claude/model-deprecations",
+              "sources": [
+                "Anthropic"
+              ]
+            },
+            "surface": {
+              "key": "model:anthropic:claude-3-sonnet-20240229",
+              "kind": "model",
+              "name": "claude-3-sonnet-20240229",
+              "ecosystem": null
+            },
+            "changeId": "d902658a-cf92-4637-aab5-29730e63dcef",
+            "daysLeft": -477,
+            "severity": "critical",
+            "replacement": "claude-sonnet-5-5",
+            "effectiveDate": "2025-07-21"
+          },
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "active",
+            "title": "claude-sonnet-4-5-20250929 on Claude API: retirement 2026-11-30",
+            "where": [
+              {
+                "line": 191,
+                "path": "src/backend/services/model_catalog.py"
+              }
+            ],
+            "reason": "Names a model this change affects. claude-sonnet-4-5-20250929 on Claude API: retirement 2026-11-30.",
+            "source": {
+              "url": "https://platform.claude.com/docs/en/about-claude/model-deprecations",
+              "sources": [
+                "Anthropic"
+              ]
+            },
+            "surface": {
+              "key": "model:anthropic:claude-sonnet-4-5-20250929",
+              "kind": "model",
+              "name": "claude-sonnet-4-5-20250929",
+              "ecosystem": null
+            },
+            "changeId": "7991d7cd-0978-4fb9-a3dc-a6e9ac8dea7d",
+            "daysLeft": 20,
+            "severity": "critical",
+            "replacement": "claude-sonnet-5-5",
+            "effectiveDate": "2026-11-30"
+          },
+          {
+            "kind": "behind",
+            "more": 0,
+            "state": "active",
+            "title": "Node.js 20: end of life 2026-04-30",
+            "where": [
+              {
+                "line": null,
+                "path": ".github/workflows/frontend-build.yml"
+              }
+            ],
+            "reason": "Node.js 20: end of life 2026-04-30; move to 24",
+            "source": {
+              "url": "https://endoflife.date/nodejs",
+              "sources": [
+                "endoflife.date"
+              ]
+            },
+            "surface": {
+              "key": "runtime:nodejs",
+              "kind": "runtime",
+              "name": "Node.js",
+              "ecosystem": null
+            },
+            "changeId": "6bdb4ca4-9b08-4dd5-a973-c9599b006e62",
+            "daysLeft": -194,
+            "severity": "high",
+            "replacement": "24",
+            "effectiveDate": "2026-04-30"
+          },
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "active",
+            "title": "gpt-5 on OpenAI API: retirement 2026-12-11",
+            "where": [
+              {
+                "line": 100,
+                "path": "docker/base-image/agent_server/model_context.py"
+              },
+              {
+                "line": 196,
+                "path": "docker/base-image/agent_server/services/codex_runtime.py"
+              },
+              {
+                "line": 100,
+                "path": "src/backend/services/model_context.py"
+              }
+            ],
+            "reason": "Names a model this change affects. gpt-5 on OpenAI API: retirement 2026-12-11.",
+            "source": {
+              "url": "https://developers.openai.com/api/docs/deprecations",
+              "sources": [
+                "OpenAI"
+              ]
+            },
+            "surface": {
+              "key": "model:openai:gpt-5",
+              "kind": "model",
+              "name": "gpt-5",
+              "ecosystem": null
+            },
+            "changeId": "469c6bb0-6570-4af7-bb36-bd12ee2d2319",
+            "daysLeft": 31,
+            "severity": "high",
+            "replacement": "gpt-5.6-sol",
+            "effectiveDate": "2026-12-11"
+          },
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "needs_review",
+            "title": "claude-opus-4-6 on Microsoft Foundry: retirement 2027-02-02",
+            "where": [
+              {
+                "line": 170,
+                "path": "src/backend/services/model_catalog.py"
+              }
+            ],
+            "reason": "A public scan cannot settle whether this use is affected. Connect the repository to have it reviewed. claude-opus-4-6 on Microsoft Foundry: retirement 2027-02-02.",
+            "source": {
+              "url": "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule",
+              "sources": [
+                "Microsoft (Azure OpenAI)"
+              ]
+            },
+            "surface": {
+              "key": "model:anthropic:claude-opus-4-6",
+              "kind": "model",
+              "name": "claude-opus-4-6",
+              "ecosystem": null
+            },
+            "changeId": "0fa67aef-6bb3-44b0-a890-20daa31c3495",
+            "daysLeft": 84,
+            "severity": "high",
+            "replacement": null,
+            "effectiveDate": "2027-02-02"
+          },
+          {
+            "kind": "behind",
+            "more": 0,
+            "state": "active",
+            "title": "Tailwind CSS 3.4: end of life 2027-02-28",
+            "where": [
+              {
+                "line": null,
+                "path": "src/frontend/package.json"
+              }
+            ],
+            "reason": "tailwindcss 3.4.19 has an end of life date. 4.3.5 clears it.",
+            "source": {
+              "url": "https://endoflife.date/tailwind-css",
+              "sources": [
+                "endoflife.date"
+              ]
+            },
+            "surface": {
+              "key": "package:npm:tailwindcss",
+              "kind": "package",
+              "name": "tailwindcss",
+              "ecosystem": "npm"
+            },
+            "changeId": "1bb74c6b-1b03-43e5-aadd-cd6f09a376f1",
+            "daysLeft": 110,
+            "severity": "medium",
+            "replacement": "4.3.5",
+            "effectiveDate": "2027-02-28"
+          },
+          {
+            "kind": "behind",
+            "more": 0,
+            "state": "active",
+            "title": "GHSA-3qf3-8w2g-rqmx: python-jose algorithm confusion guard bypassed by DER-encoded public keys",
+            "where": [
+              {
+                "line": null,
+                "path": "tests/requirements-test.txt"
+              }
+            ],
+            "reason": "python-jose 3.5.0 has a security advisory. No version clears it yet.",
+            "source": {
+              "url": "https://osv.dev/vulnerability/GHSA-3qf3-8w2g-rqmx",
+              "sources": [
+                "Open Source Vulnerabilities (OSV)"
+              ]
+            },
+            "surface": {
+              "key": "package:pypi:python-jose",
+              "kind": "package",
+              "name": "python-jose",
+              "ecosystem": "pypi"
+            },
+            "changeId": "969c611a-a949-413c-961a-59a166e166fe",
+            "daysLeft": null,
+            "severity": "critical",
+            "replacement": null,
+            "effectiveDate": null
+          }
+        ],
+        "scannedAt": "2026-11-10T14:34:34.730Z",
+        "truncated": false,
+        "repository": {
+          "url": "https://github.com/Abilityai/trinity",
+          "repo": "trinity",
+          "owner": "Abilityai",
+          "headSha": "30ea76c92a24e023ddfda679081be08751c63323",
+          "fullName": "Abilityai/trinity",
+          "defaultBranch": "main"
+        }
+      }
+    }
+  ]
+}

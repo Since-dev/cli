@@ -1,0 +1,4 @@
+$ since login
+--- stderr
+Give the email to sign in with: since login --email you@example.com
+--- exit 2

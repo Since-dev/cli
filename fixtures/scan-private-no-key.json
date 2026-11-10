@@ -1,0 +1,15 @@
+{
+  "args": [],
+  "origin": "git@github.com:acme/secret.git",
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/scan",
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "message": "GitHub serves no public repository by that name."
+      }
+    }
+  ]
+}

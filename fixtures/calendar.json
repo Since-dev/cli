@@ -1,0 +1,318 @@
+{
+  "args": [
+    "calendar"
+  ],
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "GET /v1/calendar",
+      "status": 200,
+      "body": {
+        "entries": [
+          {
+            "id": "319519d3-7cb8-4bf1-8816-2b8725900ff3",
+            "kind": "runtime",
+            "category": "runtime",
+            "categoryLabel": "Runtime",
+            "event": "end_of_life",
+            "provider": "dotnet",
+            "providerName": "Microsoft .NET",
+            "name": "Microsoft .NET",
+            "modelId": null,
+            "platform": null,
+            "platformName": null,
+            "version": "9",
+            "symbol": null,
+            "title": "Microsoft .NET 9: end of life 2026-11-10",
+            "summary": null,
+            "date": "2026-11-10",
+            "dateKind": "eol",
+            "dates": [
+              {
+                "date": "2026-11-10",
+                "kind": "eol"
+              }
+            ],
+            "daysLeft": 0,
+            "severity": "high",
+            "replacement": null,
+            "source": {
+              "url": "https://endoflife.date/dotnet",
+              "quote": null,
+              "license": "MIT"
+            },
+            "sources": [
+              "endoflife.date"
+            ],
+            "lastCheckedAt": "2026-11-10T06:47:34Z",
+            "announcedAt": "2026-10-26T17:52:54Z",
+            "updatedAt": "2026-10-26T17:52:54Z",
+            "regions": null,
+            "path": "/calendar/dotnet/9"
+          },
+          {
+            "id": "e5d818dc-2492-4acc-bf0c-3f56659873fa",
+            "kind": "runtime",
+            "category": "database",
+            "categoryLabel": "Database",
+            "event": "end_of_life",
+            "provider": "postgresql",
+            "providerName": "PostgreSQL",
+            "name": "PostgreSQL",
+            "modelId": null,
+            "platform": null,
+            "platformName": null,
+            "version": "14",
+            "symbol": null,
+            "title": "PostgreSQL 14: end of life 2026-11-12",
+            "summary": null,
+            "date": "2026-11-12",
+            "dateKind": "eol",
+            "dates": [
+              {
+                "date": "2026-11-12",
+                "kind": "eol"
+              }
+            ],
+            "daysLeft": 2,
+            "severity": "high",
+            "replacement": null,
+            "source": {
+              "url": "https://endoflife.date/postgresql",
+              "quote": null,
+              "license": "MIT"
+            },
+            "sources": [
+              "endoflife.date"
+            ],
+            "lastCheckedAt": "2026-11-10T06:47:34Z",
+            "announcedAt": "2026-10-26T17:53:00Z",
+            "updatedAt": "2026-10-26T17:53:00Z",
+            "regions": null,
+            "path": "/calendar/postgresql/14"
+          },
+          {
+            "id": "144a3179-160a-42cd-8e3b-c1978d044a04",
+            "kind": "api",
+            "category": "api",
+            "categoryLabel": "Provider API",
+            "event": "removal",
+            "provider": "github",
+            "providerName": "GitHub",
+            "name": "GitHub REST API",
+            "modelId": null,
+            "platform": null,
+            "platformName": null,
+            "version": null,
+            "symbol": "GET /repos/{owner}/{repo}/dependency-graph/sbom",
+            "title": "GitHub REST API: GET /repos/{owner}/{repo}/dependency-graph/sbom is deprecated, removal on 2026-11-13",
+            "summary": "> [!WARNING] > **Closing down notice:** This operation is closing down and will not be accessible after November 13, 2026. Please migrate to the asynchronous flow. Use \"[Request generation of a software bill of materials (SBOM) for a repository](https://docs.github.com/rest/dependency-graph/sboms#request-generation-of-a-software-bill-of-materials-sbom-for-a-repository)\" to trigger the report, then \"[Fetch a software bill of materials (SBOM) for a repository](https://docs.github.com/rest/dependency-graph/sboms#fetch-a-software-bill-of-materials-sbom-for-a-repository)\" to retrieve it. For more information, see the [changelog](https://github.blog/changelog/2026-05-12-synchronous-sbom-api-deprecated/). Exports the software bill of materials (SBOM) for a repository in SPDX JSON format.",
+            "date": "2026-11-13",
+            "dateKind": "hard",
+            "dates": [
+              {
+                "date": "2026-05-12",
+                "kind": "deprecated"
+              },
+              {
+                "date": "2026-11-13",
+                "kind": "hard"
+              }
+            ],
+            "daysLeft": 3,
+            "severity": "high",
+            "replacement": null,
+            "source": {
+              "url": "https://raw.githubusercontent.com/github/rest-api-description/bb754941722779d8a5b3a2f25a5fbb7ce794e1ea/descriptions/api.github.com/api.github.com.json",
+              "quote": null,
+              "license": null
+            },
+            "sources": [
+              "API providers' published OpenAPI specifications"
+            ],
+            "lastCheckedAt": "2026-11-10T15:10:13Z",
+            "announcedAt": "2026-10-28T01:14:06Z",
+            "updatedAt": "2026-11-03T01:54:33Z",
+            "regions": null,
+            "path": "/calendar/github/api.github.com/get-repos-owner-repo-dependency-graph-sbom"
+          },
+          {
+            "id": "807c97df-5710-4419-8588-8cdc6670aaef",
+            "kind": "model",
+            "category": "model",
+            "categoryLabel": "AI model",
+            "event": "retirement",
+            "provider": "anthropic",
+            "providerName": "Anthropic",
+            "name": "Claude 3.5 Sonnet",
+            "modelId": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+            "platform": "bedrock",
+            "platformName": "Amazon Bedrock",
+            "version": null,
+            "symbol": null,
+            "title": "anthropic.claude-3-5-sonnet-20240620-v1:0 on Amazon Bedrock: retirement 2026-11-13 in ap-northeast-2, ap-south-1 and ap-southeast-1",
+            "summary": "Deprecated on 2026-10-10. End of life 2026-11-13 in ap-northeast-2, ap-south-1 and ap-southeast-1. The legacy page lists no other regions for this model.",
+            "date": "2026-11-13",
+            "dateKind": "eol",
+            "dates": [
+              {
+                "date": "2026-10-10",
+                "kind": "deprecated"
+              },
+              {
+                "date": "2026-11-13",
+                "kind": "eol"
+              }
+            ],
+            "daysLeft": 3,
+            "severity": "critical",
+            "replacement": null,
+            "source": {
+              "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html",
+              "quote": "Anthropic | Claude 3.5 Sonnet | anthropic.claude-3-5-sonnet-20240620-v1:0 | ap-northeast-2, ap-south-1, ap-southeast-1 | October 10, 2026 | November 13, 2026 | October 10, 2026",
+              "license": null
+            },
+            "sources": [
+              "Amazon Web Services (Bedrock)"
+            ],
+            "lastCheckedAt": "2026-11-10T12:36:55Z",
+            "announcedAt": "2026-10-10T00:00:00Z",
+            "updatedAt": "2026-11-09T18:15:33Z",
+            "regions": [
+              "ap-northeast-2",
+              "ap-south-1",
+              "ap-southeast-1"
+            ],
+            "path": "/calendar/anthropic/anthropic.claude-3-5-sonnet-20240620-v1-0/bedrock"
+          },
+          {
+            "id": "00373a86-2ac3-427d-8982-494cae7d4180",
+            "kind": "model",
+            "category": "model",
+            "categoryLabel": "AI model",
+            "event": "retirement",
+            "provider": "openai",
+            "providerName": "OpenAI",
+            "name": "codex-mini-2025-05-16",
+            "modelId": "codex-mini-2025-05-16",
+            "platform": "azure",
+            "platformName": "Microsoft Foundry",
+            "version": null,
+            "symbol": null,
+            "title": "codex-mini-2025-05-16 on Microsoft Foundry: retirement 2026-11-15",
+            "summary": "Foundry lists its lifecycle stage as Deprecated.",
+            "date": "2026-11-15",
+            "dateKind": "hard",
+            "dates": [
+              {
+                "date": "2026-11-15",
+                "kind": "hard"
+              }
+            ],
+            "daysLeft": 5,
+            "severity": "critical",
+            "replacement": null,
+            "source": {
+              "url": "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule",
+              "quote": "codex-mini | 2025-05-16 | Deprecated | 2026-11-15 | none",
+              "license": null
+            },
+            "sources": [
+              "Microsoft (Azure OpenAI)"
+            ],
+            "lastCheckedAt": "2026-11-10T13:51:57Z",
+            "announcedAt": "2026-10-26T17:53:39Z",
+            "updatedAt": "2026-10-28T06:41:54Z",
+            "regions": null,
+            "path": "/calendar/openai/codex-mini-2025-05-16/azure"
+          },
+          {
+            "id": "187f76da-4627-4916-b82c-62052042cbbb",
+            "kind": "model",
+            "category": "model",
+            "categoryLabel": "AI model",
+            "event": "retirement",
+            "provider": "google",
+            "providerName": "Google",
+            "name": "gemini-2.5-flash-native-audio-preview-12-2025",
+            "modelId": "gemini-2.5-flash-native-audio-preview-12-2025",
+            "platform": "gemini",
+            "platformName": "Gemini API",
+            "version": null,
+            "symbol": null,
+            "title": "gemini-2.5-flash-native-audio-preview-12-2025 on Gemini API: retirement no sooner than 2026-11-17",
+            "summary": "Recommended replacement: gemini-3.8-live.",
+            "date": "2026-11-17",
+            "dateKind": "not_before",
+            "dates": [
+              {
+                "date": "2026-11-17",
+                "kind": "not_before"
+              }
+            ],
+            "daysLeft": 7,
+            "severity": "medium",
+            "replacement": "gemini-3.8-live",
+            "source": {
+              "url": "https://ai.google.dev/gemini-api/docs/deprecations",
+              "quote": "gemini-2.5-flash-native-audio-preview-12-2025 | December 12, 2025 | November 17, 2026 | gemini-3.8-live",
+              "license": "CC-BY-4.0"
+            },
+            "sources": [
+              "Google (Gemini API)"
+            ],
+            "lastCheckedAt": "2026-11-10T11:44:16Z",
+            "announcedAt": "2026-10-26T17:53:30Z",
+            "updatedAt": "2026-11-09T17:41:22Z",
+            "regions": null,
+            "path": "/calendar/google/gemini-2.5-flash-native-audio-preview-12-2025/gemini"
+          },
+          {
+            "id": "263df8b0-82a3-48c4-9812-59bb50f5ebbe",
+            "kind": "model",
+            "category": "model",
+            "categoryLabel": "AI model",
+            "event": "retirement",
+            "provider": "google",
+            "providerName": "Google",
+            "name": "gemini-3.1-flash-live-preview",
+            "modelId": "gemini-3.1-flash-live-preview",
+            "platform": "gemini",
+            "platformName": "Gemini API",
+            "version": null,
+            "symbol": null,
+            "title": "gemini-3.1-flash-live-preview on Gemini API: retirement no sooner than 2026-11-17",
+            "summary": "Recommended replacement: gemini-3.8-live.",
+            "date": "2026-11-17",
+            "dateKind": "not_before",
+            "dates": [
+              {
+                "date": "2026-11-17",
+                "kind": "not_before"
+              }
+            ],
+            "daysLeft": 7,
+            "severity": "medium",
+            "replacement": "gemini-3.8-live",
+            "source": {
+              "url": "https://ai.google.dev/gemini-api/docs/deprecations",
+              "quote": "gemini-3.1-flash-live-preview | March 11, 2026 | November 17, 2026 | gemini-3.8-live",
+              "license": "CC-BY-4.0"
+            },
+            "sources": [
+              "Google (Gemini API)"
+            ],
+            "lastCheckedAt": "2026-11-10T11:44:16Z",
+            "announcedAt": "2026-10-26T17:53:30Z",
+            "updatedAt": "2026-11-09T17:41:22Z",
+            "regions": null,
+            "path": "/calendar/google/gemini-3.1-flash-live-preview/gemini"
+          }
+        ],
+        "nextCursor": "WyIyMDI2LTExLTMwIiwiNTc2YWRiNDctYjJmNC00M2UxLTgyYmMtODc4OWJkYjBmOGEwIl0",
+        "from": "2026-08-12",
+        "generatedAt": "2026-11-10T15:24:34.576Z"
+      }
+    }
+  ]
+}

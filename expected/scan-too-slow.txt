@@ -1,0 +1,7 @@
+$ since acme/huge
+--- stderr
+Reading acme/huge on GitHub. A first scan can take a minute.
+This repository took longer to scan than the public scanner allows. Connect it through the GitHub App to track all of it.
+--- log
+POST /v1/scan {"repo":"acme/huge"}
+--- exit 1

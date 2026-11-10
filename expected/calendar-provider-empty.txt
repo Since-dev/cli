@@ -1,0 +1,10 @@
+$ since calendar --provider mistral --within 7
+
+  Ending in the next 7 days  mistral
+
+  Nothing on the calendar in that time.
+
+  Calendar      https://since.dev/calendar?utm_source=cli
+--- log
+GET /v1/calendar?within=7d&provider=mistral&limit=15
+--- exit 0

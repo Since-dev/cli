@@ -1,0 +1,16 @@
+$ since acme/clean
+--- stderr
+Reading acme/clean on GitHub. A first scan can take a minute.
+Since is busy. Trying again in 20 seconds.
+Since is busy. Trying again in 20 seconds.
+Since is busy. Trying again in 20 seconds.
+Since is still busy. Try again in a minute.
+--- log
+POST /v1/scan {"repo":"acme/clean"}
+sleep 20000
+POST /v1/scan {"repo":"acme/clean"}
+sleep 20000
+POST /v1/scan {"repo":"acme/clean"}
+sleep 20000
+POST /v1/scan {"repo":"acme/clean"}
+--- exit 1

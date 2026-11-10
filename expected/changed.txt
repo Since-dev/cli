@@ -1,0 +1,20 @@
+$ since changed express --since 4.19.2
+
+  express  npm  latest 5.3.0
+  4 changes since 4.19.2, and more
+
+  behavior changed   Content-Disposition filenames that are HTTP tokens are no longer quoted in express 5.3.0
+                     in 5.3.0   https://github.com/expressjs/express/releases/tag/v5.3.0
+  behavior changed   Default error handler logs the full error object instead of only the stack in express 5.3.0
+                     in 5.3.0   https://github.com/expressjs/express/releases/tag/v5.3.0
+  behavior changed   res.send no longer adds Content-Length when Transfer-Encoding is present in express 5.3.0
+                     in 5.3.0   https://github.com/expressjs/express/releases/tag/v5.3.0
+  behavior changed   req.fresh now applies freshness checks to QUERY requests in express 5.3.0
+                     in 5.3.0   https://github.com/expressjs/express/releases/tag/v5.3.0
+
+  Since is reading newer releases of this package now. Run this again in a few minutes to include them.
+
+  More          since changed express --since 4.19.2 --all
+--- log
+GET /v1/changes?package=express&ecosystem=npm&since=4.19.2&limit=20 key
+--- exit 0

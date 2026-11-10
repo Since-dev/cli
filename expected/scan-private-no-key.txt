@@ -1,0 +1,7 @@
+$ since
+--- stderr
+Reading acme/secret on GitHub. A first scan can take a minute.
+acme/secret is not a public GitHub repository. For a private one, sign in and run this again: since login
+--- log
+POST /v1/scan {"repo":"acme/secret"}
+--- exit 1

@@ -1,0 +1,17 @@
+{
+  "args": [
+    "check"
+  ],
+  "origin": "https://github.com/acme/clean",
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/scan",
+      "status": 502,
+      "body": {
+        "error": "unavailable",
+        "message": "GitHub could not be read."
+      }
+    }
+  ]
+}

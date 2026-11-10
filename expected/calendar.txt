@@ -1,0 +1,24 @@
+$ since calendar
+
+  Ending in the next 30 days
+
+  today     Microsoft .NET 9: end of life 2026-11-10
+            https://since.dev/calendar/dotnet/9?utm_source=cli
+  2 days    PostgreSQL 14: end of life 2026-11-12
+            https://since.dev/calendar/postgresql/14?utm_source=cli
+  3 days    GitHub REST API: GET /repos/{owner}/{repo}/dependency-graph/sbom is deprecated, removal on 2026-11-13
+            https://since.dev/calendar/github/api.github.com/get-repos-owner-repo-dependency-graph-sbom?utm_source=cli
+  3 days    anthropic.claude-3-5-sonnet-20240620-v1:0 on Amazon Bedrock: retirement 2026-11-13 in ap-northeast-2, ap-south-1 and ap-southeast-1
+            https://since.dev/calendar/anthropic/anthropic.claude-3-5-sonnet-20240620-v1-0/bedrock?utm_source=cli
+  5 days    codex-mini-2025-05-16 on Microsoft Foundry: retirement 2026-11-15
+            https://since.dev/calendar/openai/codex-mini-2025-05-16/azure?utm_source=cli
+  7 days    gemini-2.5-flash-native-audio-preview-12-2025 on Gemini API: retirement no sooner than 2026-11-17
+            use gemini-3.8-live   https://since.dev/calendar/google/gemini-2.5-flash-native-audio-preview-12-2025/gemini?utm_source=cli
+  7 days    gemini-3.1-flash-live-preview on Gemini API: retirement no sooner than 2026-11-17
+            use gemini-3.8-live   https://since.dev/calendar/google/gemini-3.1-flash-live-preview/gemini?utm_source=cli
+
+  More          since calendar --all
+  Calendar      https://since.dev/calendar?utm_source=cli
+--- log
+GET /v1/calendar?within=30d&limit=15
+--- exit 0

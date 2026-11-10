@@ -1,0 +1,49 @@
+$ since acme/clean --json
+{
+  "repository": {
+    "owner": "acme",
+    "repo": "clean",
+    "fullName": "acme/clean",
+    "url": "https://github.com/acme/clean",
+    "headSha": "9f1c2ab77d0e4c1a8b3f5d6e7a8b9c0d1e2f3a4b",
+    "defaultBranch": "main"
+  },
+  "scannedAt": "2026-11-10T14:59:48.000Z",
+  "summary": {
+    "findings": 0,
+    "bySeverity": {
+      "low": 0,
+      "medium": 0,
+      "high": 0,
+      "critical": 0,
+      "unknown": 0
+    },
+    "dependencies": 57,
+    "files": 1,
+    "references": 0
+  },
+  "findings": [],
+  "truncated": false,
+  "reading": 0,
+  "coverage": {
+    "complete": true,
+    "notes": [],
+    "gaps": [],
+    "roots": [
+      ""
+    ],
+    "languages": [
+      "TypeScript"
+    ],
+    "detections": {},
+    "ecosystems": [
+      "npm"
+    ],
+    "headSha": "9f1c2ab77d0e4c1a8b3f5d6e7a8b9c0d1e2f3a4b"
+  }
+}
+--- stderr
+Reading acme/clean on GitHub. A first scan can take a minute.
+--- log
+POST /v1/scan {"repo":"acme/clean"}
+--- exit 0

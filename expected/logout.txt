@@ -1,0 +1,5 @@
+$ since logout
+Signed out. The key is gone from this computer; delete it for good at https://app.since.dev/api-keys
+--- log
+remove /home/dev/.config/since/credentials.json
+--- exit 0

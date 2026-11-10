@@ -1,0 +1,44 @@
+{
+  "args": [
+    "acme/clean"
+  ],
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/scan",
+      "status": 503,
+      "retryAfter": "20",
+      "body": {
+        "error": "busy",
+        "message": "Every scan slot is taken. Try again shortly."
+      }
+    },
+    {
+      "request": "POST /v1/scan",
+      "status": 503,
+      "retryAfter": "20",
+      "body": {
+        "error": "busy",
+        "message": "Every scan slot is taken. Try again shortly."
+      }
+    },
+    {
+      "request": "POST /v1/scan",
+      "status": 503,
+      "retryAfter": "20",
+      "body": {
+        "error": "busy",
+        "message": "Every scan slot is taken. Try again shortly."
+      }
+    },
+    {
+      "request": "POST /v1/scan",
+      "status": 503,
+      "retryAfter": "20",
+      "body": {
+        "error": "busy",
+        "message": "Every scan slot is taken. Try again shortly."
+      }
+    }
+  ]
+}

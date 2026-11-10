@@ -1,0 +1,15 @@
+$ since login
+
+  Open this link to approve the sign-in:
+    https://app.since.dev/agent?user_code=WXYZ1234
+  Code: WXYZ-1234
+
+--- stderr
+The sign-in was declined.
+--- log
+prompt Email:
+POST /v1/agent/register {"client_name":"since-cli","email":"dev@example.com"}
+open https://app.since.dev/agent?user_code=WXYZ1234
+sleep 5000
+POST /v1/agent/token {"claim_token":"fixture-claim-token"}
+--- exit 1

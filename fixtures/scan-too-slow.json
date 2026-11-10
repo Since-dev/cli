@@ -1,0 +1,16 @@
+{
+  "args": [
+    "acme/huge"
+  ],
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/scan",
+      "status": 422,
+      "body": {
+        "error": "too_slow",
+        "message": "This repository took longer to scan than the public scanner allows. Connect it through the GitHub App to track all of it."
+      }
+    }
+  ]
+}

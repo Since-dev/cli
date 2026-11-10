@@ -1,0 +1,12 @@
+{
+  "args": [
+    "acme/clean"
+  ],
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/scan",
+      "fail": true
+    }
+  ]
+}

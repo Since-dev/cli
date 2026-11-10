@@ -1,0 +1,285 @@
+{
+  "args": [
+    "changed",
+    "express",
+    "--since",
+    "4.19.2"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "GET /v1/changes",
+      "status": 200,
+      "body": {
+        "query": {
+          "package": {
+            "ecosystem": "npm",
+            "name": "express",
+            "purl": "pkg:npm/express",
+            "known": true
+          },
+          "since": {
+            "version": "4.19.2"
+          }
+        },
+        "package": {
+          "ecosystem": "npm",
+          "name": "express",
+          "purl": "pkg:npm/express",
+          "status": "active",
+          "latest": "5.3.0",
+          "since": "4.19.2",
+          "releasesBehind": 14
+        },
+        "reading": {
+          "retryAfterSec": 60,
+          "releases": 1
+        },
+        "changes": [
+          {
+            "id": "f17ba3a0-d87a-4402-8c3b-1866dc85fb70",
+            "source": "catalog",
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "kind": "behavior_changed",
+            "severity": "medium",
+            "title": "Content-Disposition filenames that are HTTP tokens are no longer quoted in express 5.3.0",
+            "summary": "Filenames that are valid HTTP tokens are emitted without quotes. Update any code or tests that assert on the exact header bytes.",
+            "replacement": null,
+            "platform": null,
+            "symbol": "res.download",
+            "introducedIn": "5.3.0",
+            "removedIn": null,
+            "effectiveDate": null,
+            "affectedRanges": [],
+            "dates": {},
+            "evidence": [
+              {
+                "url": "https://github.com/expressjs/express/releases/tag/v5.3.0",
+                "quote": "file names that are valid HTTP tokens are no longer wrapped in quotes",
+                "sourceKind": "release_notes",
+                "license": null
+              }
+            ],
+            "sources": [
+              "npm"
+            ],
+            "detectedAt": "2026-11-10T14:10:55.465Z",
+            "occurredAt": "2026-10-09T12:56:54.505Z",
+            "publishedAt": null,
+            "changedAt": "2026-10-09T12:56:54.505Z"
+          },
+          {
+            "id": "e73c0de1-7d43-47eb-a58c-7a1462b34477",
+            "source": "catalog",
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "kind": "behavior_changed",
+            "severity": "medium",
+            "title": "Default error handler logs the full error object instead of only the stack in express 5.3.0",
+            "summary": "The default error handler now logs the whole error object, including fields such as cause. Log output will differ from earlier versions.",
+            "replacement": null,
+            "platform": null,
+            "symbol": null,
+            "introducedIn": "5.3.0",
+            "removedIn": null,
+            "effectiveDate": null,
+            "affectedRanges": [],
+            "dates": {},
+            "evidence": [
+              {
+                "url": "https://github.com/expressjs/express/releases/tag/v5.3.0",
+                "quote": "The default error handler now logs the full error object instead of only its stack trace",
+                "sourceKind": "release_notes",
+                "license": null
+              }
+            ],
+            "sources": [
+              "npm"
+            ],
+            "detectedAt": "2026-11-10T14:10:55.465Z",
+            "occurredAt": "2026-10-09T12:56:54.505Z",
+            "publishedAt": null,
+            "changedAt": "2026-10-09T12:56:54.505Z"
+          },
+          {
+            "id": "96aa40ad-a336-4331-a716-6218e614f8f7",
+            "source": "catalog",
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "kind": "behavior_changed",
+            "severity": "medium",
+            "title": "res.send no longer adds Content-Length when Transfer-Encoding is present in express 5.3.0",
+            "summary": "Content-Length is now only set by res.send() when no Transfer-Encoding header is present. Check any code or tests that expect both headers in the same response.",
+            "replacement": null,
+            "platform": null,
+            "symbol": "res.send",
+            "introducedIn": "5.3.0",
+            "removedIn": null,
+            "effectiveDate": null,
+            "affectedRanges": [],
+            "dates": {},
+            "evidence": [
+              {
+                "url": "https://github.com/expressjs/express/releases/tag/v5.3.0",
+                "quote": "`res.send()` now keeps any existing parameters when adding the charset",
+                "sourceKind": "release_notes",
+                "license": null
+              }
+            ],
+            "sources": [
+              "npm"
+            ],
+            "detectedAt": "2026-11-10T14:10:55.465Z",
+            "occurredAt": "2026-10-09T12:56:54.505Z",
+            "publishedAt": null,
+            "changedAt": "2026-10-09T12:56:54.505Z"
+          },
+          {
+            "id": "4aeb3679-4767-4d52-98cd-740abedc3ea8",
+            "source": "catalog",
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "kind": "behavior_changed",
+            "severity": "medium",
+            "title": "Content-Disposition filenames that are HTTP tokens are no longer quoted in express 5.3.0",
+            "summary": "Filenames that are valid HTTP tokens are emitted without quotes. Update any code or tests that assert on the exact header bytes.",
+            "replacement": null,
+            "platform": null,
+            "symbol": "res.sendFile",
+            "introducedIn": "5.3.0",
+            "removedIn": null,
+            "effectiveDate": null,
+            "affectedRanges": [],
+            "dates": {},
+            "evidence": [
+              {
+                "url": "https://github.com/expressjs/express/releases/tag/v5.3.0",
+                "quote": "file names that are valid HTTP tokens are no longer wrapped in quotes",
+                "sourceKind": "release_notes",
+                "license": null
+              }
+            ],
+            "sources": [
+              "npm"
+            ],
+            "detectedAt": "2026-11-10T14:10:55.465Z",
+            "occurredAt": "2026-10-09T12:56:54.505Z",
+            "publishedAt": null,
+            "changedAt": "2026-10-09T12:56:54.505Z"
+          },
+          {
+            "id": "19aad0b0-eb79-49ec-9a06-1720d4aaf11a",
+            "source": "catalog",
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "kind": "behavior_changed",
+            "severity": "medium",
+            "title": "req.fresh now applies freshness checks to QUERY requests in express 5.3.0",
+            "summary": "QUERY requests can now receive 304 Not Modified when validators match. Code that relied on QUERY always getting a full response should be reviewed.",
+            "replacement": null,
+            "platform": null,
+            "symbol": "req.fresh",
+            "introducedIn": "5.3.0",
+            "removedIn": null,
+            "effectiveDate": null,
+            "affectedRanges": [],
+            "dates": {},
+            "evidence": [
+              {
+                "url": "https://github.com/expressjs/express/releases/tag/v5.3.0",
+                "quote": "it is now included in the freshness check",
+                "sourceKind": "release_notes",
+                "license": null
+              }
+            ],
+            "sources": [
+              "npm"
+            ],
+            "detectedAt": "2026-11-10T14:10:55.465Z",
+            "occurredAt": "2026-10-09T12:56:54.505Z",
+            "publishedAt": null,
+            "changedAt": "2026-10-09T12:56:54.505Z"
+          },
+          {
+            "id": "15e97bba-5250-45fc-aac1-005bea6608f7",
+            "source": "catalog",
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "kind": "behavior_changed",
+            "severity": "medium",
+            "title": "Content-Disposition filenames that are HTTP tokens are no longer quoted in express 5.3.0",
+            "summary": "Filenames that are valid HTTP tokens are emitted without quotes. Update any code or tests that assert on the exact header bytes.",
+            "replacement": null,
+            "platform": null,
+            "symbol": "res.attachment",
+            "introducedIn": "5.3.0",
+            "removedIn": null,
+            "effectiveDate": null,
+            "affectedRanges": [],
+            "dates": {},
+            "evidence": [
+              {
+                "url": "https://github.com/expressjs/express/releases/tag/v5.3.0",
+                "quote": "file names that are valid HTTP tokens are no longer wrapped in quotes",
+                "sourceKind": "release_notes",
+                "license": null
+              }
+            ],
+            "sources": [
+              "npm"
+            ],
+            "detectedAt": "2026-11-10T14:10:55.465Z",
+            "occurredAt": "2026-10-09T12:56:54.505Z",
+            "publishedAt": null,
+            "changedAt": "2026-10-09T12:56:54.505Z"
+          }
+        ],
+        "nextCursor": "WyJyZWNlbnQiLCIyMDI0LTA5LTEwVDA0OjQwOjM0LjM0ODAwMFoiLCJlNjU2ZmIwYi05YWI2LTQxNjMtYjU4ZS0xMWU1OWVhZWYwZDIiXQ",
+        "coverage": {
+          "sources": [],
+          "missing": []
+        }
+      }
+    }
+  ]
+}

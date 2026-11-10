@@ -1,0 +1,50 @@
+{
+  "args": [
+    "login",
+    "--email",
+    "dev@example.com"
+  ],
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/agent/register",
+      "status": 200,
+      "body": {
+        "setup": {
+          "verification_uri": "https://app.since.dev/agent",
+          "verification_uri_complete": "https://app.since.dev/agent?user_code=WXYZ1234",
+          "user_code": "WXYZ1234",
+          "expires_in": 900,
+          "interval": 5
+        },
+        "claim_token": "fixture-claim-token",
+        "key_name": "Agent"
+      }
+    },
+    {
+      "request": "POST /v1/agent/token",
+      "status": 400,
+      "body": {
+        "error": "authorization_pending",
+        "message": "Not approved yet."
+      }
+    },
+    {
+      "request": "POST /v1/agent/token",
+      "status": 400,
+      "body": {
+        "error": "slow_down",
+        "message": "Poll more slowly."
+      }
+    },
+    {
+      "request": "POST /v1/agent/token",
+      "status": 200,
+      "body": {
+        "api_key": "fixture-key",
+        "key_name": "Agent",
+        "key_prefix": "fixture"
+      }
+    }
+  ]
+}

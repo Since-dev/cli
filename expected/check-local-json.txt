@@ -1,0 +1,214 @@
+$ since check --json --fail-on none
+{
+  "files": [
+    {
+      "path": "package.json",
+      "answer": {
+        "input": "manifest",
+        "checked": [],
+        "findings": [
+          {
+            "surface": {
+              "kind": "runtime",
+              "key": "runtime:nodejs",
+              "provider": "nodejs",
+              "name": "Node.js"
+            },
+            "version": "18",
+            "state": "affected",
+            "severity": "high",
+            "reason": "Node.js 18: end of life 2025-04-30; move to 24",
+            "replacement": "24",
+            "effectiveDate": "2025-04-30",
+            "daysLeft": -559,
+            "changeId": "eb4cb06b-b640-4ce0-bdbb-8e0fdfc9bafc",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 3
+              }
+            ],
+            "source": "https://endoflife.date/nodejs"
+          },
+          {
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:openai",
+              "provider": "npm",
+              "name": "openai",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/openai"
+            },
+            "version": "4.20.0",
+            "state": "affected",
+            "severity": "medium",
+            "reason": "The signature of client.containers.files.content.retrieve changed in openai 5.0.0. Upgrading from 4.20.0 to current crosses 5.0.0.",
+            "replacement": null,
+            "effectiveDate": null,
+            "daysLeft": null,
+            "changeId": "003cf61b-0e5c-425e-b652-efffac5046db",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 7
+              }
+            ],
+            "source": "https://www.npmjs.com/package/openai/v/5.0.0"
+          },
+          {
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:openai",
+              "provider": "npm",
+              "name": "openai",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/openai"
+            },
+            "version": "4.20.0",
+            "state": "affected",
+            "severity": "medium",
+            "reason": "The signature of client.models.list changed in openai 5.0.0. Upgrading from 4.20.0 to current crosses 5.0.0.",
+            "replacement": null,
+            "effectiveDate": null,
+            "daysLeft": null,
+            "changeId": "0080bca0-f4e4-4465-b41c-033481d80c42",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 7
+              }
+            ],
+            "source": "https://www.npmjs.com/package/openai/v/5.0.0"
+          },
+          {
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "version": "4.19.2",
+            "state": "affected",
+            "severity": "medium",
+            "reason": "res.redirect no longer renders links in HTML body in express 4.20.0. Upgrading from 4.19.2 to current crosses 4.20.0.",
+            "replacement": null,
+            "effectiveDate": null,
+            "daysLeft": null,
+            "changeId": "00a477c6-eaff-4f47-882d-747bee2a9ca8",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 6
+              }
+            ],
+            "source": "https://github.com/expressjs/express/releases/tag/4.20.0"
+          },
+          {
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:openai",
+              "provider": "npm",
+              "name": "openai",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/openai"
+            },
+            "version": "4.20.0",
+            "state": "affected",
+            "severity": "medium",
+            "reason": "The signature of Beta.Assistants.AssistantStream._runToolAssistantStream changed in openai 5.0.0. Upgrading from 4.20.0 to current crosses 5.0.0.",
+            "replacement": null,
+            "effectiveDate": null,
+            "daysLeft": null,
+            "changeId": "01390695-e399-4de6-8142-903cabd6303f",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 7
+              }
+            ],
+            "source": "https://www.npmjs.com/package/openai/v/5.0.0"
+          },
+          {
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "version": "4.19.2",
+            "state": "affected",
+            "severity": "medium",
+            "reason": "Node.js versions before 18 no longer supported. Upgrading from 4.19.2 to current crosses 5.0.0.",
+            "replacement": null,
+            "effectiveDate": null,
+            "daysLeft": null,
+            "changeId": "0e9d92a7-849b-4bc6-9a9f-83afe14dad26",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 6
+              }
+            ],
+            "source": "https://github.com/expressjs/express/releases/tag/v5.0.0"
+          },
+          {
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:request",
+              "provider": "npm",
+              "name": "request",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/request"
+            },
+            "version": "2.88.2",
+            "state": "affected",
+            "severity": "medium",
+            "reason": "request is deprecated on npm. Applies to every version of request.",
+            "replacement": null,
+            "effectiveDate": null,
+            "daysLeft": null,
+            "changeId": "2707a827-e9b0-4b2f-ab46-9ba61fc103a9",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 5
+              }
+            ],
+            "source": "https://www.npmjs.com/package/request"
+          }
+        ],
+        "unresolved": [
+          {
+            "name": "npm:openai@4.20.0",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 7
+              }
+            ],
+            "reason": "Since is reading what changed in 197 releases of openai after 4.20.0 now. Call check_code again in about 60 seconds for those changes; this answer is free."
+          }
+        ],
+        "truncated": true,
+        "coverage": {
+          "sources": [],
+          "missing": []
+        },
+        "reading": {
+          "retryAfterSec": 60,
+          "releases": 197
+        },
+        "checkedCount": 4,
+        "totalFindings": 579,
+        "nextCursor": null
+      }
+    }
+  ]
+}
+--- log
+POST /v1/check key {"detail":"summary","manifest":{"content":"{\n  \"name\": \"shop\",\n  \"engines\": { \"node\": \"18\" },\n  \"dependencies\": {\n    \"request\": \"2.88.2\",\n    \"express\": \"4.19.2\",\n    \"openai\": \"4.20.0\"\n  }\n}\n","path":"package.json"}}
+--- exit 0

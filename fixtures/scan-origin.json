@@ -1,0 +1,621 @@
+{
+  "args": [],
+  "origin": "git@github.com:plasma-umass/scalene.git",
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/scan",
+      "status": 200,
+      "body": {
+        "reading": 3,
+        "summary": {
+          "files": 377,
+          "findings": 12,
+          "bySeverity": {
+            "low": 2,
+            "medium": 4,
+            "high": 2,
+            "critical": 3,
+            "unknown": 1
+          },
+          "references": 412,
+          "dependencies": 247
+        },
+        "coverage": {
+          "gaps": [
+            {
+              "kind": "unsupported_language",
+              "files": 1,
+              "paths": [
+                "docs/scalene-demo.ipynb"
+              ]
+            },
+            {
+              "kind": "parse_incomplete",
+              "files": 10,
+              "paths": [
+                "src/include/eintr_retry.hpp",
+                "src/include/memcpysampler.hpp",
+                "src/include/pywhere.hpp",
+                "src/include/sampleheap.hpp",
+                "src/include/sampleheap_win.hpp",
+                "src/include/sampler.hpp",
+                "src/source/libscalene.cpp",
+                "src/source/libscalene_windows.cpp",
+                "src/source/native_unwind.cpp",
+                "src/source/pywhere.cpp"
+              ]
+            }
+          ],
+          "notes": [
+            "1 file is over the scanner's per-file limit and was not read.",
+            "setup.py: Since does not read this manifest format yet.",
+            "3 packages are being read from their registries now; scan again in a few minutes to include them.",
+            "Since is reading what changed in 1,108 newer releases of the direct dependencies now; scan again in a few minutes to include them."
+          ],
+          "roots": [],
+          "headSha": "d5b59aff9ceeb0b3335a1253d83568f3348778bb",
+          "complete": false,
+          "languages": [
+            {
+              "files": 311,
+              "partial": 1,
+              "skipped": 47,
+              "analyzed": 263,
+              "excluded": 0,
+              "language": "Python",
+              "unparsed": 0
+            },
+            {
+              "files": 25,
+              "partial": 10,
+              "skipped": 3,
+              "analyzed": 12,
+              "excluded": 0,
+              "language": "C++",
+              "unparsed": 0
+            },
+            {
+              "files": 15,
+              "partial": 0,
+              "skipped": 5,
+              "analyzed": 10,
+              "excluded": 0,
+              "language": "TypeScript",
+              "unparsed": 0
+            },
+            {
+              "files": 5,
+              "partial": 0,
+              "skipped": 3,
+              "analyzed": 0,
+              "excluded": 2,
+              "language": "JavaScript",
+              "unparsed": 0
+            },
+            {
+              "files": 1,
+              "partial": 0,
+              "skipped": 0,
+              "analyzed": 0,
+              "excluded": 0,
+              "language": ".ipynb",
+              "unparsed": 1
+            },
+            {
+              "files": 1,
+              "partial": 0,
+              "skipped": 0,
+              "analyzed": 0,
+              "excluded": 0,
+              "language": ".js",
+              "unparsed": 1
+            },
+            {
+              "files": 1,
+              "partial": 0,
+              "skipped": 1,
+              "analyzed": 0,
+              "excluded": 0,
+              "language": "C",
+              "unparsed": 0
+            }
+          ],
+          "detections": {},
+          "ecosystems": [
+            {
+              "gaps": [],
+              "usage": "full",
+              "ecosystem": "github"
+            },
+            {
+              "gaps": [],
+              "usage": "full",
+              "ecosystem": "npm"
+            },
+            {
+              "gaps": [
+                "unresolved_import"
+              ],
+              "usage": "partial",
+              "ecosystem": "pypi"
+            }
+          ]
+        },
+        "findings": [
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "active",
+            "title": "gpt-4 on OpenAI API: retirement 2026-10-23",
+            "where": [
+              {
+                "line": 150,
+                "path": "scalene/scalene-gui/openai.ts"
+              },
+              {
+                "line": 189,
+                "path": "scalene/scalene-gui/openai.ts"
+              }
+            ],
+            "reason": "Names a model this change affects. gpt-4 on OpenAI API: retirement 2026-10-23.",
+            "source": {
+              "url": "https://developers.openai.com/api/docs/deprecations",
+              "sources": [
+                "OpenAI"
+              ]
+            },
+            "surface": {
+              "key": "model:openai:gpt-4",
+              "kind": "model",
+              "name": "gpt-4",
+              "ecosystem": null
+            },
+            "changeId": "1fb1fb7f-c6f6-4d12-ac4e-709369d106a4",
+            "daysLeft": -18,
+            "severity": "critical",
+            "replacement": "gpt-5.6-sol",
+            "effectiveDate": "2026-10-23"
+          },
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "active",
+            "title": "claude-sonnet-4-5-20250929 on Claude API: retirement 2026-11-30",
+            "where": [
+              {
+                "line": 30,
+                "path": "scalene/scalene-gui/anthropic.ts"
+              }
+            ],
+            "reason": "Names a model this change affects. claude-sonnet-4-5-20250929 on Claude API: retirement 2026-11-30.",
+            "source": {
+              "url": "https://platform.claude.com/docs/en/about-claude/model-deprecations",
+              "sources": [
+                "Anthropic"
+              ]
+            },
+            "surface": {
+              "key": "model:anthropic:claude-sonnet-4-5-20250929",
+              "kind": "model",
+              "name": "claude-sonnet-4-5-20250929",
+              "ecosystem": null
+            },
+            "changeId": "7991d7cd-0978-4fb9-a3dc-a6e9ac8dea7d",
+            "daysLeft": 20,
+            "severity": "critical",
+            "replacement": "claude-sonnet-5-5",
+            "effectiveDate": "2026-11-30"
+          },
+          {
+            "kind": "behind",
+            "more": 0,
+            "state": "active",
+            "title": "fast-xml-parser: 7 security advisories",
+            "where": [
+              {
+                "line": null,
+                "path": "scalene/scalene-gui/package-lock.json"
+              }
+            ],
+            "reason": "fast-xml-parser 5.2.5 has 7 security advisories. 5.7.0 clears them.",
+            "source": {
+              "url": "https://osv.dev/vulnerability/GHSA-m7jm-9gc2-mpf2",
+              "sources": [
+                "Open Source Vulnerabilities (OSV)"
+              ]
+            },
+            "surface": {
+              "key": "package:npm:fast-xml-parser",
+              "kind": "package",
+              "name": "fast-xml-parser",
+              "ecosystem": "npm"
+            },
+            "changeId": null,
+            "daysLeft": null,
+            "severity": "critical",
+            "replacement": "5.7.0",
+            "effectiveDate": null
+          },
+          {
+            "kind": "behind",
+            "more": 9,
+            "state": "active",
+            "title": "NumPy 1.25: end of life 2025-06-18",
+            "where": [
+              {
+                "line": 2,
+                "path": "test/automatic/dataframe/dataframe-select-optimized.py"
+              },
+              {
+                "line": 2,
+                "path": "test/automatic/dataframe/dataframe-select-original.py"
+              },
+              {
+                "line": 3,
+                "path": "test/automatic/svm/svm-optimized.py"
+              },
+              {
+                "line": 4,
+                "path": "test/automatic/svm/svm-optimized.py"
+              },
+              {
+                "line": 3,
+                "path": "test/automatic/svm/svm-original.py"
+              },
+              {
+                "line": 4,
+                "path": "test/automatic/svm/svm-original.py"
+              },
+              {
+                "line": 17,
+                "path": "test/issue_659_workload.py"
+              },
+              {
+                "line": 1,
+                "path": "test/issues/test-issue156.py"
+              },
+              {
+                "line": 2,
+                "path": "test/issues/test-issue167.py"
+              },
+              {
+                "line": 2,
+                "path": "test/issues/test-issue266.py"
+              }
+            ],
+            "reason": "numpy 1.25.2 has an end of life date. 2.4.6 clears it.",
+            "source": {
+              "url": "https://endoflife.date/numpy",
+              "sources": [
+                "Open Source Vulnerabilities (OSV)",
+                "endoflife.date"
+              ]
+            },
+            "surface": {
+              "key": "package:pypi:numpy",
+              "kind": "package",
+              "name": "numpy",
+              "ecosystem": "pypi"
+            },
+            "changeId": "e23cbb10-a4be-4758-a1a3-3bad05de2801",
+            "daysLeft": -510,
+            "severity": "high",
+            "replacement": "2.4.6",
+            "effectiveDate": "2025-06-18"
+          },
+          {
+            "kind": "behind",
+            "more": 0,
+            "state": "active",
+            "title": "GHSA-7f2v-3qq3-vvjf: Vega Cross-Site Scripting (XSS) via expressions abusing toString calls in environments using the VEGA_DEBUG global variable",
+            "where": [
+              {
+                "line": null,
+                "path": "scalene/scalene-gui/package.json"
+              }
+            ],
+            "reason": "vega 5.33.0 has a security advisory. 6.2.0 clears it.",
+            "source": {
+              "url": "https://osv.dev/vulnerability/GHSA-7f2v-3qq3-vvjf",
+              "sources": [
+                "Open Source Vulnerabilities (OSV)"
+              ]
+            },
+            "surface": {
+              "key": "package:npm:vega",
+              "kind": "package",
+              "name": "vega",
+              "ecosystem": "npm"
+            },
+            "changeId": "d5ffb2b4-0123-4e5f-b9b3-83812d16bc9e",
+            "daysLeft": null,
+            "severity": "high",
+            "replacement": "6.2.0",
+            "effectiveDate": null
+          },
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "active",
+            "title": "gemini-2.0-flash on Gemini API: retirement no sooner than 2026-06-01",
+            "where": [
+              {
+                "line": 48,
+                "path": "scalene/scalene-gui/gemini.ts"
+              }
+            ],
+            "reason": "Names a model this change affects. gemini-2.0-flash on Gemini API: retirement no sooner than 2026-06-01.",
+            "source": {
+              "url": "https://ai.google.dev/gemini-api/docs/deprecations",
+              "sources": [
+                "Google (Gemini API)"
+              ]
+            },
+            "surface": {
+              "key": "model:google:gemini-2.0-flash",
+              "kind": "model",
+              "name": "gemini-2.0-flash",
+              "ecosystem": null
+            },
+            "changeId": "9f1de704-f763-4adb-9880-139ce613d16c",
+            "daysLeft": -162,
+            "severity": "medium",
+            "replacement": "gemini-3.6-flash",
+            "effectiveDate": "2026-06-01"
+          },
+          {
+            "kind": "behind",
+            "more": 0,
+            "state": "active",
+            "title": "GHSA-67mh-4wv8-2f99: esbuild enables any website to send any requests to the development server and read the response",
+            "where": [
+              {
+                "line": null,
+                "path": "scalene/scalene-gui/package.json"
+              }
+            ],
+            "reason": "esbuild 0.24.2 has a security advisory. 0.25.0 clears it.",
+            "source": {
+              "url": "https://osv.dev/vulnerability/GHSA-67mh-4wv8-2f99",
+              "sources": [
+                "Open Source Vulnerabilities (OSV)"
+              ]
+            },
+            "surface": {
+              "key": "package:npm:esbuild",
+              "kind": "package",
+              "name": "esbuild",
+              "ecosystem": "npm"
+            },
+            "changeId": "846e1faa-fd75-48ce-8ef7-7513e3dd1706",
+            "daysLeft": null,
+            "severity": "medium",
+            "replacement": "0.25.0",
+            "effectiveDate": null
+          },
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "needs_review",
+            "title": "gemini-2.0-flash on Vertex AI: retirement no sooner than 2026-06-01",
+            "where": [
+              {
+                "line": 48,
+                "path": "scalene/scalene-gui/gemini.ts"
+              }
+            ],
+            "reason": "A public scan cannot settle whether this use is affected. Connect the repository to have it reviewed. gemini-2.0-flash on Vertex AI: retirement no sooner than 2026-06-01.",
+            "source": {
+              "url": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions",
+              "sources": [
+                "Google Cloud (Vertex AI)"
+              ]
+            },
+            "surface": {
+              "key": "model:google:gemini-2.0-flash",
+              "kind": "model",
+              "name": "gemini-2.0-flash",
+              "ecosystem": null
+            },
+            "changeId": "7cec7dbd-7e45-47d7-8dbf-a1bbbd5ed9e5",
+            "daysLeft": -162,
+            "severity": "medium",
+            "replacement": "gemini-3.5-flash-lite",
+            "effectiveDate": "2026-06-01"
+          },
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "needs_review",
+            "title": "The signature of pydantic.BaseModel changed in pydantic 2.0",
+            "where": [
+              {
+                "line": 107,
+                "path": "scalene/scalene_json.py"
+              },
+              {
+                "line": 143,
+                "path": "scalene/scalene_json.py"
+              },
+              {
+                "line": 294,
+                "path": "scalene/scalene_json.py"
+              },
+              {
+                "line": 355,
+                "path": "scalene/scalene_json.py"
+              },
+              {
+                "line": 360,
+                "path": "scalene/scalene_json.py"
+              },
+              {
+                "line": 379,
+                "path": "scalene/scalene_json.py"
+              },
+              {
+                "line": 41,
+                "path": "test/smoketest_line_invalidation.py"
+              },
+              {
+                "line": 19,
+                "path": "tests/test_schema_combined_stacks.py"
+              }
+            ],
+            "reason": "A public scan cannot settle whether this use is affected. Connect the repository to have it reviewed. The signature of pydantic.BaseModel changed in pydantic 2.0.",
+            "source": {
+              "url": "https://pypi.org/project/pydantic/2.0/",
+              "sources": [
+                "PyPI"
+              ]
+            },
+            "surface": {
+              "key": "package:pypi:pydantic",
+              "kind": "package",
+              "name": "pydantic",
+              "ecosystem": "pypi"
+            },
+            "changeId": "0207bb28-3be4-4b00-ab0c-56b6b0d74aaf",
+            "daysLeft": null,
+            "severity": "medium",
+            "replacement": null,
+            "effectiveDate": null
+          },
+          {
+            "kind": "behind",
+            "more": 0,
+            "state": "active",
+            "title": "Python 3.9: end of life 2025-10-31",
+            "where": [
+              {
+                "line": null,
+                "path": ".github/workflows/build-and-upload.yml"
+              }
+            ],
+            "reason": "Declares support for Python 3.9, past its end of life",
+            "source": {
+              "url": "https://endoflife.date/python",
+              "sources": [
+                "endoflife.date"
+              ]
+            },
+            "surface": {
+              "key": "runtime:python",
+              "kind": "runtime",
+              "name": "Python",
+              "ecosystem": null
+            },
+            "changeId": "8e1c6afd-cdcd-4251-9fd3-7efe5d33d1c0",
+            "daysLeft": -375,
+            "severity": "low",
+            "replacement": null,
+            "effectiveDate": "2025-10-31"
+          },
+          {
+            "kind": "behind",
+            "more": 0,
+            "state": "active",
+            "title": "GHSA-5239-wwwm-4pmq: Pygments has Regular Expression Denial of Service (ReDoS) due to Inefficient Regex for GUID Matching",
+            "where": [
+              {
+                "line": null,
+                "path": "Pipfile.lock"
+              }
+            ],
+            "reason": "Pygments 2.16.1 has a security advisory. 2.20.0 clears it.",
+            "source": {
+              "url": "https://osv.dev/vulnerability/GHSA-5239-wwwm-4pmq",
+              "sources": [
+                "Open Source Vulnerabilities (OSV)"
+              ]
+            },
+            "surface": {
+              "key": "package:pypi:pygments",
+              "kind": "package",
+              "name": "Pygments",
+              "ecosystem": "pypi"
+            },
+            "changeId": "a539c1e8-9007-4cfc-ba86-f2a2d644a974",
+            "daysLeft": null,
+            "severity": "low",
+            "replacement": "2.20.0",
+            "effectiveDate": null
+          },
+          {
+            "kind": "behind",
+            "more": 0,
+            "state": "active",
+            "title": "OSV-2021-449: UNKNOWN READ in std::pair<absl::lts_NUMBER_02_25::container_internal::raw_hash_set<absl::lts_NUM",
+            "where": [
+              {
+                "line": 28,
+                "path": "scalene/scalene_tensorflow.py"
+              },
+              {
+                "line": 57,
+                "path": "scalene/scalene_tensorflow.py"
+              },
+              {
+                "line": 1,
+                "path": "test/testtf.py"
+              },
+              {
+                "line": 193,
+                "path": "tests/test_tensorflow_profiler.py"
+              },
+              {
+                "line": 210,
+                "path": "tests/test_tensorflow_profiler.py"
+              },
+              {
+                "line": 237,
+                "path": "tests/test_tensorflow_profiler.py"
+              },
+              {
+                "line": 257,
+                "path": "tests/test_tensorflow_profiler.py"
+              },
+              {
+                "line": 285,
+                "path": "tests/test_tensorflow_profiler.py"
+              },
+              {
+                "line": 305,
+                "path": "tests/test_tensorflow_profiler.py"
+              }
+            ],
+            "reason": "tensorflow 2.21.0 has a security advisory. No version clears it yet.",
+            "source": {
+              "url": "https://osv.dev/vulnerability/OSV-2021-449",
+              "sources": [
+                "Open Source Vulnerabilities (OSV)"
+              ]
+            },
+            "surface": {
+              "key": "package:pypi:tensorflow",
+              "kind": "package",
+              "name": "tensorflow",
+              "ecosystem": "pypi"
+            },
+            "changeId": "804de18e-dda4-4049-bf74-c83b3185843e",
+            "daysLeft": null,
+            "severity": "unknown",
+            "replacement": null,
+            "effectiveDate": null
+          }
+        ],
+        "scannedAt": "2026-11-10T14:39:25.965Z",
+        "truncated": false,
+        "repository": {
+          "url": "https://github.com/plasma-umass/scalene",
+          "repo": "scalene",
+          "owner": "plasma-umass",
+          "headSha": "d5b59aff9ceeb0b3335a1253d83568f3348778bb",
+          "fullName": "plasma-umass/scalene",
+          "defaultBranch": "master"
+        }
+      }
+    }
+  ]
+}
