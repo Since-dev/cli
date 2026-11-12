@@ -1,0 +1,17 @@
+$ since acme/voice
+
+  acme/voice  main@9f1c2ab  scanned just now
+  1 with a date   57 dependencies and 1 file read
+
+  7 days    gemini-3.1-flash-live-preview on Gemini API: retirement no sooner than 2026-11-17
+            src/live.ts:3   use gemini-3.8-live
+            gemini-3.8-live works differently: Function calls default to NON_BLOCKING. To keep the old behavior: set behavior to BLOCKING on your tool declarations.  and 1 more
+            https://ai.google.dev/gemini-api/docs/deprecations
+
+  Full report   https://since.dev/scan/acme/voice?utm_source=cli
+  Next          since init   your coding agent checks before it writes
+--- stderr
+Reading acme/voice on GitHub. A first scan can take a minute.
+--- log
+POST /v1/scan {"repo":"acme/voice"}
+--- exit 0

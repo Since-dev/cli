@@ -1,0 +1,102 @@
+{
+  "args": [
+    "acme/voice"
+  ],
+  "now": "2026-11-10T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/scan",
+      "status": 200,
+      "body": {
+        "repository": {
+          "owner": "acme",
+          "repo": "voice",
+          "fullName": "acme/voice",
+          "url": "https://github.com/acme/voice",
+          "headSha": "9f1c2ab77d0e4c1a8b3f5d6e7a8b9c0d1e2f3a4b",
+          "defaultBranch": "main"
+        },
+        "scannedAt": "2026-11-10T14:59:48.000Z",
+        "summary": {
+          "findings": 1,
+          "bySeverity": {
+            "low": 0,
+            "medium": 0,
+            "high": 1,
+            "critical": 0,
+            "unknown": 0
+          },
+          "dependencies": 57,
+          "files": 1,
+          "references": 1
+        },
+        "findings": [
+          {
+            "kind": "change",
+            "more": 0,
+            "state": "active",
+            "severity": "high",
+            "daysLeft": 7,
+            "effectiveDate": "2026-11-17",
+            "title": "gemini-3.1-flash-live-preview on Gemini API: retirement no sooner than 2026-11-17",
+            "reason": "Names a model this change affects. gemini-3.1-flash-live-preview on Gemini API: retirement no sooner than 2026-11-17. Moving to gemini-3.8-live is more than a new id: 2 things work differently there. The first: Function calls default to NON_BLOCKING. To keep the old behavior: set behavior to BLOCKING on your tool declarations.",
+            "replacement": "gemini-3.8-live",
+            "replacementNotes": [
+              {
+                "kind": "default",
+                "setting": "function_declarations[].behavior",
+                "text": "Function calls default to NON_BLOCKING. To keep the old behavior: set behavior to BLOCKING on your tool declarations.",
+                "quote": "Asynchronous execution (`behavior: NON_BLOCKING`) is the default function calling mode",
+                "url": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-live"
+              },
+              {
+                "kind": "rejected",
+                "setting": "proactive_audio",
+                "text": "Setting proactive_audio: false returns an error.",
+                "quote": "Setting `proactive_audio: false` returns an error",
+                "url": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-live"
+              }
+            ],
+            "where": [
+              {
+                "path": "src/live.ts",
+                "line": 3
+              }
+            ],
+            "source": {
+              "url": "https://ai.google.dev/gemini-api/docs/deprecations",
+              "sources": [
+                "Google"
+              ]
+            },
+            "surface": {
+              "key": "model:google:gemini-3.1-flash-live-preview",
+              "kind": "model",
+              "name": "gemini-3.1-flash-live-preview",
+              "ecosystem": null
+            },
+            "changeId": "0d1a6a1e-5a54-4f0e-9a43-6a6b2f0b7c11"
+          }
+        ],
+        "truncated": false,
+        "reading": 0,
+        "coverage": {
+          "complete": true,
+          "notes": [],
+          "gaps": [],
+          "roots": [
+            ""
+          ],
+          "languages": [
+            "TypeScript"
+          ],
+          "detections": {},
+          "ecosystems": [
+            "npm"
+          ],
+          "headSha": "9f1c2ab77d0e4c1a8b3f5d6e7a8b9c0d1e2f3a4b"
+        }
+      }
+    }
+  ]
+}

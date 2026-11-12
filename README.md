@@ -1,6 +1,6 @@
 # since-dev
 
-Find the code in a repository that is about to stop working: AI model IDs with a shutdown date, runtimes past end of life, dependencies with security advisories or breaking releases. Every finding comes with its file and line, its date, its replacement and its source.
+Find the code in a repository that is about to stop working: AI model IDs with a shutdown date, runtimes past end of life, dependencies with security advisories or breaking releases. Every finding comes with its file and line, its date, its replacement and its source. When a replacement model works differently (a default that changed, a setting it refuses), the finding says so under it.
 
 ```bash
 npx since-dev

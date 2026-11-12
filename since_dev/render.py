@@ -75,6 +75,18 @@ def _join(parts, separator):
     return separator.join(str(part) for part in parts if part)
 
 
+
+def differs_line(replacement, notes):
+    """What a replacement does differently, as one line under it: the first difference and how many more there are.
+
+    A move to a model that changes a default or refuses a setting is never shown as a new id alone.
+    """
+    texts = [note["text"].strip() for note in notes if isinstance(note, dict) and isinstance(note.get("text"), str) and note["text"].strip()] if isinstance(notes, list) else []
+    if not replacement or not texts:
+        return None
+    return "%s works differently: %s%s" % (replacement, texts[0], "  and %s more" % num(len(texts) - 1) if len(texts) > 1 else "")
+
+
 def scan_items(findings):
     """A public scan's findings, as the rows the CLI prints.
 
@@ -99,6 +111,7 @@ def scan_items(findings):
             "place": _place_of(where[0]["path"], where[0].get("line")) if where else None,
             "extra": max(0, len(where) - 1) + (finding["more"] if is_number(finding.get("more")) else 0),
             "replacement": finding.get("replacement") or None,
+            "differs": differs_line(finding.get("replacement"), finding.get("replacementNotes")),
             "source": source or None,
             "hint": None,
         }
@@ -118,7 +131,7 @@ def scan_items(findings):
         elif len(row["members"]) == 1:
             items.append(row["members"][0])
         else:
-            items.append(dict(row["members"][0], title="%s: %s changes in newer releases may reach this code" % (row["name"], num(len(row["members"]))), replacement=None, source=None))
+            items.append(dict(row["members"][0], title="%s: %s changes in newer releases may reach this code" % (row["name"], num(len(row["members"]))), replacement=None, differs=None, source=None))
     return items
 
 
@@ -151,6 +164,7 @@ def _merge_rows(group, program):
         "place": members[0]["place"],
         "extra": 0,
         "replacement": None,
+        "differs": None,
         "source": None,
         "hint": "%s changed %s%s%s" % (program, group["name"], since, registry) if group["isPackage"] and group["name"] else None,
     }
@@ -197,6 +211,7 @@ def check_items(findings, fallback_path, program):
             "place": first or None,
             "extra": max(0, places - 1),
             "replacement": finding.get("replacement") or None,
+            "differs": differs_line(finding.get("replacement"), finding.get("replacementNotes")),
             "source": source if isinstance(source, str) and source else None,
             "hint": None,
         }
@@ -278,7 +293,7 @@ def counts_line(items, within):
 
 
 def finding_lines(items, show_all, c, more_hint):
-    """The findings, three lines each: when and what, where and the replacement, the source."""
+    """The findings, three lines each: when and what, where and the replacement, the source. One more when the replacement works differently."""
     lines = []
     shown = items if show_all else items[:SHOWN]
     for item in shown:
@@ -287,6 +302,8 @@ def finding_lines(items, show_all, c, more_hint):
         detail = _join([place, "use %s" % item["replacement"] if item["replacement"] else None, "list them: %s" % item["hint"] if item.get("hint") else None], "   ")
         if detail:
             lines.append(c.dim(PAD + detail))
+        if item.get("differs"):
+            lines.append(c.dim(PAD + item["differs"]))
         if item["source"]:
             lines.append(c.dim(PAD + item["source"]))
         lines.append("")
@@ -343,6 +360,9 @@ def calendar_lines(entries, site, c):
         detail = _join(["use %s" % entry["replacement"] if entry.get("replacement") else None, link], "   ")
         if detail:
             lines.append(c.dim(PAD + detail))
+        differs = differs_line(entry.get("replacement"), entry.get("replacementNotes"))
+        if differs:
+            lines.append(c.dim(PAD + differs))
     return lines
 
 

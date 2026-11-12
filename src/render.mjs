@@ -34,6 +34,16 @@ export function ago(ms) {
 const placeOf = (path, line) => (typeof line === "number" && line > 0 ? `${path}:${line}` : String(path))
 
 /**
+ * What a replacement does differently, as one line under it: the first difference and how many more there are. A move to
+ * a model that changes a default or refuses a setting is never shown as a new id alone.
+ */
+export function differsLine(replacement, notes) {
+  const texts = Array.isArray(notes) ? notes.map((note) => (note && typeof note.text === "string" ? note.text.trim() : "")).filter(Boolean) : []
+  if (!replacement || !texts.length) return null
+  return `${replacement} works differently: ${texts[0]}${texts.length > 1 ? `  and ${num(texts.length - 1)} more` : ""}`
+}
+
+/**
  * A public scan's findings, as the rows the CLI prints. A dependency that is a few majors behind can have dozens of
  * changes Since could not prove reach the code, all at the one line that imports it: those become one row.
  */
@@ -53,6 +63,7 @@ export function scanItems(findings) {
       place: where.length ? placeOf(where[0].path, where[0].line) : null,
       extra: Math.max(0, where.length - 1) + (typeof finding.more === "number" ? finding.more : 0),
       replacement: finding.replacement || null,
+      differs: differsLine(finding.replacement, finding.replacementNotes),
       source: source || null,
       hint: null,
     }
@@ -73,7 +84,7 @@ export function scanItems(findings) {
     if (!row.members) return row
     if (row.members.length === 1) return row.members[0]
     const first = row.members[0]
-    return { ...first, title: `${row.name}: ${num(row.members.length)} changes in newer releases may reach this code`, replacement: null, source: null }
+    return { ...first, title: `${row.name}: ${num(row.members.length)} changes in newer releases may reach this code`, replacement: null, differs: null, source: null }
   })
 }
 
@@ -97,6 +108,7 @@ function mergeRows(group, program) {
     place: group.members[0].place,
     extra: 0,
     replacement: null,
+    differs: null,
     source: null,
     hint: group.isPackage && group.name ? `${program} changed ${group.name}${since}${registry}` : null,
   }
@@ -138,6 +150,7 @@ export function checkItems(findings, fallbackPath, program) {
       place: first || null,
       extra: Math.max(0, (typeof finding.placeCount === "number" ? finding.placeCount : where.length) - 1),
       replacement: finding.replacement || null,
+      differs: differsLine(finding.replacement, finding.replacementNotes),
       source: typeof source === "string" && source ? source : null,
       hint: null,
     }
@@ -208,7 +221,7 @@ export function countsLine(items, within) {
   return within === null ? "No findings" : `Nothing dated within ${plural(within, "day")}`
 }
 
-/** The findings, three lines each: when and what, where and the replacement, the source. */
+/** The findings, three lines each: when and what, where and the replacement, the source. One more when the replacement works differently. */
 export function findingLines(items, all, c, moreHint) {
   const lines = []
   const shown = all ? items : items.slice(0, SHOWN)
@@ -217,6 +230,7 @@ export function findingLines(items, all, c, moreHint) {
     const place = item.place ? item.place + (item.extra ? `  and ${num(item.extra)} more` : "") : null
     const detail = [place, item.replacement ? `use ${item.replacement}` : null, item.hint ? `list them: ${item.hint}` : null].filter(Boolean).join("   ")
     if (detail) lines.push(c.dim(PAD + detail))
+    if (item.differs) lines.push(c.dim(PAD + item.differs))
     if (item.source) lines.push(c.dim(PAD + item.source))
     lines.push("")
   }
@@ -265,6 +279,8 @@ export function calendarLines(entries, site, c) {
     const link = typeof entry.path === "string" && entry.path.startsWith("/") ? `${site}${entry.path}?utm_source=cli` : null
     const detail = [entry.replacement ? `use ${entry.replacement}` : null, link].filter(Boolean).join("   ")
     if (detail) lines.push(c.dim(PAD + detail))
+    const differs = differsLine(entry.replacement, entry.replacementNotes)
+    if (differs) lines.push(c.dim(PAD + differs))
   }
   return lines
 }

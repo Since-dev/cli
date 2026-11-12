@@ -16,6 +16,7 @@ $ since calendar
             use gemini-3.8-live   https://since.dev/calendar/google/gemini-2.5-flash-native-audio-preview-12-2025/gemini?utm_source=cli
   7 days    gemini-3.1-flash-live-preview on Gemini API: retirement no sooner than 2026-11-17
             use gemini-3.8-live   https://since.dev/calendar/google/gemini-3.1-flash-live-preview/gemini?utm_source=cli
+            gemini-3.8-live works differently: Function calls default to NON_BLOCKING. To keep the old behavior: set behavior to BLOCKING on your tool declarations.  and 1 more
 
   More          since calendar --all
   Calendar      https://since.dev/calendar?utm_source=cli

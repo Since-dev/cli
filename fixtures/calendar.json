@@ -48,7 +48,8 @@
             "announcedAt": "2026-10-26T17:52:54Z",
             "updatedAt": "2026-10-26T17:52:54Z",
             "regions": null,
-            "path": "/calendar/dotnet/9"
+            "path": "/calendar/dotnet/9",
+            "replacementNotes": []
           },
           {
             "id": "e5d818dc-2492-4acc-bf0c-3f56659873fa",
@@ -89,7 +90,8 @@
             "announcedAt": "2026-10-26T17:53:00Z",
             "updatedAt": "2026-10-26T17:53:00Z",
             "regions": null,
-            "path": "/calendar/postgresql/14"
+            "path": "/calendar/postgresql/14",
+            "replacementNotes": []
           },
           {
             "id": "144a3179-160a-42cd-8e3b-c1978d044a04",
@@ -134,7 +136,8 @@
             "announcedAt": "2026-10-28T01:14:06Z",
             "updatedAt": "2026-11-03T01:54:33Z",
             "regions": null,
-            "path": "/calendar/github/api.github.com/get-repos-owner-repo-dependency-graph-sbom"
+            "path": "/calendar/github/api.github.com/get-repos-owner-repo-dependency-graph-sbom",
+            "replacementNotes": []
           },
           {
             "id": "807c97df-5710-4419-8588-8cdc6670aaef",
@@ -183,7 +186,8 @@
               "ap-south-1",
               "ap-southeast-1"
             ],
-            "path": "/calendar/anthropic/anthropic.claude-3-5-sonnet-20240620-v1-0/bedrock"
+            "path": "/calendar/anthropic/anthropic.claude-3-5-sonnet-20240620-v1-0/bedrock",
+            "replacementNotes": []
           },
           {
             "id": "00373a86-2ac3-427d-8982-494cae7d4180",
@@ -224,7 +228,8 @@
             "announcedAt": "2026-10-26T17:53:39Z",
             "updatedAt": "2026-10-28T06:41:54Z",
             "regions": null,
-            "path": "/calendar/openai/codex-mini-2025-05-16/azure"
+            "path": "/calendar/openai/codex-mini-2025-05-16/azure",
+            "replacementNotes": []
           },
           {
             "id": "187f76da-4627-4916-b82c-62052042cbbb",
@@ -265,7 +270,8 @@
             "announcedAt": "2026-10-26T17:53:30Z",
             "updatedAt": "2026-11-09T17:41:22Z",
             "regions": null,
-            "path": "/calendar/google/gemini-2.5-flash-native-audio-preview-12-2025/gemini"
+            "path": "/calendar/google/gemini-2.5-flash-native-audio-preview-12-2025/gemini",
+            "replacementNotes": []
           },
           {
             "id": "263df8b0-82a3-48c4-9812-59bb50f5ebbe",
@@ -306,7 +312,17 @@
             "announcedAt": "2026-10-26T17:53:30Z",
             "updatedAt": "2026-11-09T17:41:22Z",
             "regions": null,
-            "path": "/calendar/google/gemini-3.1-flash-live-preview/gemini"
+            "path": "/calendar/google/gemini-3.1-flash-live-preview/gemini",
+            "replacementNotes": [
+              {
+                "text": "Function calls default to NON_BLOCKING. To keep the old behavior: set behavior to BLOCKING on your tool declarations.",
+                "url": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-live"
+              },
+              {
+                "text": "Setting proactive_audio: false returns an error.",
+                "url": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-live"
+              }
+            ]
           }
         ],
         "nextCursor": "WyIyMDI2LTExLTMwIiwiNTc2YWRiNDctYjJmNC00M2UxLTgyYmMtODc4OWJkYjBmOGEwIl0",
