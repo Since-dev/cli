@@ -1,0 +1,14 @@
+$ since init
+
+  Would write   .mcp.json                Claude Code
+  Would write   .cursor/mcp.json         Cursor
+  Would write   .vscode/mcp.json         VS Code
+  Would write   .claude/rules/since.md   Claude Code's rule
+  Would write   .cursor/rules/since.mdc  Cursor's rule
+  Would write   GEMINI.md                Gemini CLI's rule
+  Would write   AGENTS.md                the rule Codex and other agents read
+
+  Nothing was written.
+--- log
+prompt Write these 7 files? [y/N]
+--- exit 0

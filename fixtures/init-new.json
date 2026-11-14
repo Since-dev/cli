@@ -1,6 +1,7 @@
 {
   "args": [
-    "init"
+    "init",
+    "--yes"
   ],
   "program": "npx since-dev",
   "now": "2026-11-10T15:00:00.000Z",

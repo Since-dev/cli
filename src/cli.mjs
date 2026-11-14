@@ -8,12 +8,12 @@ import { init } from "./init.mjs"
 import { MAX_CHARACTERS, checkBody, findManifests, parseRepo } from "./local.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.1.5"
+export const VERSION = "0.2.0"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
 const COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "help", "version"]
-const SWITCHES = ["all", "json", "local", "dry-run", "no-color", "help", "version"]
+const SWITCHES = ["all", "json", "local", "dry-run", "yes", "no-color", "help", "version"]
 const OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "email", "max-files"]
 const FAIL_ON = ["low", "medium", "high", "critical", "none"]
 const MAX_PAGES = 10
@@ -68,6 +68,7 @@ function help(p) {
     ["--since <version>", "changed: only what changed after this version"],
     ["--email <address>", "login: the email to sign in with"],
     ["--dry-run", "init: show what would be written"],
+    ["--yes", "init: write without asking"],
     ["--max-files <n>", "how many manifests to check (default 10)"],
     ["--no-color", "plain text"],
   ]
@@ -532,7 +533,7 @@ export async function run(argv, io) {
   const ctx = { io, args, p, api, c: text.palette(color), check: command === "check", key: readKey(io, api), failOn, within, maxFiles }
   if (command === "calendar") return calendarCommand(ctx)
   if (command === "changed") return changedCommand(ctx)
-  if (command === "init") return init(io, p, Boolean(args.flags["dry-run"]))
+  if (command === "init") return init(io, p, { dryRun: Boolean(args.flags["dry-run"]), yes: Boolean(args.flags.yes) })
   if (command === "login") return loginCommand(ctx)
   if (command === "logout") return logoutCommand(ctx)
   return repoCommand(ctx)

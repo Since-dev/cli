@@ -1,6 +1,7 @@
 {
   "args": [
-    "init"
+    "init",
+    "--yes"
   ],
   "files": {
     ".mcp.json": "{\n    \"mcpServers\": {\n        \"github\": {\n            \"command\": \"github-mcp\"\n        }\n    }\n}\n",

@@ -1,0 +1,102 @@
+$ since init
+
+  Would write   .mcp.json                Claude Code
+  Would write   .cursor/mcp.json         Cursor
+  Would write   .vscode/mcp.json         VS Code
+  Would write   .claude/rules/since.md   Claude Code's rule
+  Would write   .cursor/rules/since.mdc  Cursor's rule
+  Would write   GEMINI.md                Gemini CLI's rule
+  Would write   AGENTS.md                the rule Codex and other agents read
+
+
+  Wrote 7 files.
+  Commit these files: everyone who clones this repository gets the same setup.
+  The first tool call opens a sign-in in the browser. No key goes in any file.
+--- log
+prompt Write these 7 files? [y/N]
+--- wrote .mcp.json
+{
+  "mcpServers": {
+    "since": {
+      "type": "http",
+      "url": "https://api.since.dev/mcp"
+    }
+  }
+}
+--- wrote .cursor/mcp.json
+{
+  "mcpServers": {
+    "since": {
+      "url": "https://api.since.dev/mcp"
+    }
+  }
+}
+--- wrote .vscode/mcp.json
+{
+  "servers": {
+    "since": {
+      "type": "http",
+      "url": "https://api.since.dev/mcp"
+    }
+  }
+}
+--- wrote .claude/rules/since.md
+# Since.dev
+
+Since.dev (the `since` MCP server) checks AI model ids, dependency upgrades, Dockerfiles, GitHub Actions workflows and runtime versions for breaking changes, deprecations and retirements published after your training.
+
+Call it before you write an AI model id, add or upgrade a dependency, write or edit a Dockerfile, a compose file or a CI workflow (the images, runners, actions and runtime versions they name), set a runtime version (.nvmrc, engines, go.mod, pyproject.toml), or write code that calls an AI model or a fast-changing SDK or API; and when an error follows a version bump or began with no code change. Your training data may not include these changes, even for well-known packages such as react, next, openai or pydantic. Call it even when the version was given to you or the fix seems well known: do what was asked, and report what it finds.
+
+Which tool:
+- whats_changed: what changed in a package, model, provider, API or runtime since a version, a date or your training cutoff. With provider and current=true, the model ids to use in new code.
+- check_code: what in this code, file, model id or version is affected, on which line, and what to move to. A runtime version from any file is surface (runtime:nodejs@18); a Dockerfile, a compose file or a GitHub Actions workflow is code with its path.
+- fix_code: the fix, for a snippet or a connected repository. It runs the check itself.
+
+Skip it for code that uses no package, model, API or runtime, for general programming questions, and for the repository's own git history.
+--- wrote .cursor/rules/since.mdc
+---
+description: Check AI model ids, dependencies, Dockerfiles, CI files and runtime versions with Since.dev
+alwaysApply: true
+---
+
+Since.dev (the `since` MCP server) checks AI model ids, dependency upgrades, Dockerfiles, GitHub Actions workflows and runtime versions for breaking changes, deprecations and retirements published after your training.
+
+Call it before you write an AI model id, add or upgrade a dependency, write or edit a Dockerfile, a compose file or a CI workflow (the images, runners, actions and runtime versions they name), set a runtime version (.nvmrc, engines, go.mod, pyproject.toml), or write code that calls an AI model or a fast-changing SDK or API; and when an error follows a version bump or began with no code change. Your training data may not include these changes, even for well-known packages such as react, next, openai or pydantic. Call it even when the version was given to you or the fix seems well known: do what was asked, and report what it finds.
+
+Which tool:
+- whats_changed: what changed in a package, model, provider, API or runtime since a version, a date or your training cutoff. With provider and current=true, the model ids to use in new code.
+- check_code: what in this code, file, model id or version is affected, on which line, and what to move to. A runtime version from any file is surface (runtime:nodejs@18); a Dockerfile, a compose file or a GitHub Actions workflow is code with its path.
+- fix_code: the fix, for a snippet or a connected repository. It runs the check itself.
+
+Skip it for code that uses no package, model, API or runtime, for general programming questions, and for the repository's own git history.
+--- wrote GEMINI.md
+<!-- since:start -->
+## Since.dev
+
+Since.dev (the `since` MCP server) checks AI model ids, dependency upgrades, Dockerfiles, GitHub Actions workflows and runtime versions for breaking changes, deprecations and retirements published after your training.
+
+Call it before you write an AI model id, add or upgrade a dependency, write or edit a Dockerfile, a compose file or a CI workflow (the images, runners, actions and runtime versions they name), set a runtime version (.nvmrc, engines, go.mod, pyproject.toml), or write code that calls an AI model or a fast-changing SDK or API; and when an error follows a version bump or began with no code change. Your training data may not include these changes, even for well-known packages such as react, next, openai or pydantic. Call it even when the version was given to you or the fix seems well known: do what was asked, and report what it finds.
+
+Which tool:
+- whats_changed: what changed in a package, model, provider, API or runtime since a version, a date or your training cutoff. With provider and current=true, the model ids to use in new code.
+- check_code: what in this code, file, model id or version is affected, on which line, and what to move to. A runtime version from any file is surface (runtime:nodejs@18); a Dockerfile, a compose file or a GitHub Actions workflow is code with its path.
+- fix_code: the fix, for a snippet or a connected repository. It runs the check itself.
+
+Skip it for code that uses no package, model, API or runtime, for general programming questions, and for the repository's own git history.
+<!-- since:end -->
+--- wrote AGENTS.md
+<!-- since:start -->
+## Since.dev
+
+Since.dev (the `since` MCP server) checks AI model ids, dependency upgrades, Dockerfiles, GitHub Actions workflows and runtime versions for breaking changes, deprecations and retirements published after your training.
+
+Call it before you write an AI model id, add or upgrade a dependency, write or edit a Dockerfile, a compose file or a CI workflow (the images, runners, actions and runtime versions they name), set a runtime version (.nvmrc, engines, go.mod, pyproject.toml), or write code that calls an AI model or a fast-changing SDK or API; and when an error follows a version bump or began with no code change. Your training data may not include these changes, even for well-known packages such as react, next, openai or pydantic. Call it even when the version was given to you or the fix seems well known: do what was asked, and report what it finds.
+
+Which tool:
+- whats_changed: what changed in a package, model, provider, API or runtime since a version, a date or your training cutoff. With provider and current=true, the model ids to use in new code.
+- check_code: what in this code, file, model id or version is affected, on which line, and what to move to. A runtime version from any file is surface (runtime:nodejs@18); a Dockerfile, a compose file or a GitHub Actions workflow is code with its path.
+- fix_code: the fix, for a snippet or a connected repository. It runs the check itself.
+
+Skip it for code that uses no package, model, API or runtime, for general programming questions, and for the repository's own git history.
+<!-- since:end -->
+--- exit 0

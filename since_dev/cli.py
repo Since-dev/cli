@@ -19,7 +19,7 @@ DEFAULT_API = "https://api.since.dev"
 SITE = "https://since.dev"
 APP = "https://app.since.dev"
 COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "help", "version"]
-SWITCHES = ["all", "json", "local", "dry-run", "no-color", "help", "version"]
+SWITCHES = ["all", "json", "local", "dry-run", "yes", "no-color", "help", "version"]
 OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "email", "max-files"]
 FAIL_ON = ["low", "medium", "high", "critical", "none"]
 MAX_PAGES = 10
@@ -85,6 +85,7 @@ def help_text(p):
         ["--since <version>", "changed: only what changed after this version"],
         ["--email <address>", "login: the email to sign in with"],
         ["--dry-run", "init: show what would be written"],
+        ["--yes", "init: write without asking"],
         ["--max-files <n>", "how many manifests to check (default 10)"],
         ["--no-color", "plain text"],
     ]
@@ -633,7 +634,7 @@ def run(argv, io):
     if command == "changed":
         return changed_command(ctx)
     if command == "init":
-        return init(io, p, bool(flags.get("dry-run")))
+        return init(io, p, dry_run=bool(flags.get("dry-run")), yes=bool(flags.get("yes")))
     if command == "login":
         return login_command(ctx)
     if command == "logout":

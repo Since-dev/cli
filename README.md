@@ -75,18 +75,25 @@ Coding agents write the model IDs and versions that were current when they were 
 npx since-dev init
 ```
 
-It writes four files into the repository:
+It shows the files it would write and asks before it writes them:
 
 | File | For |
 | --- | --- |
 | `.mcp.json` | Claude Code |
 | `.cursor/mcp.json` | Cursor |
 | `.vscode/mcp.json` | VS Code |
-| `AGENTS.md` | A short rule, between two markers, that tells any agent when to check |
+| `.claude/rules/since.md` | Claude Code's rule |
+| `.cursor/rules/since.mdc` | Cursor's rule |
+| `GEMINI.md` | Gemini CLI's rule, between two markers |
+| `AGENTS.md` | The rule Codex and other agents read, between two markers |
 
-Commit them and everyone who clones the repository gets the same setup. No key goes in any file: the first tool call opens a sign-in in the browser.
+The first three connect the Since.dev tools. The other four hold one short rule that says when to check: before the agent writes a model ID, adds or upgrades a dependency, or writes a runtime version. Connecting the tools alone leaves it to the agent to think of them. The rule is what makes it check without being asked.
 
-It only ever adds its own `since` entry. Other servers in those files stay as they are, a second run changes nothing, and a file it cannot read as plain JSON is left alone with the lines to add by hand. `--dry-run` shows what it would write.
+`--yes` writes without asking, for a script. `--dry-run` only shows what it would write.
+
+Commit the files and everyone who clones the repository gets the same setup. No key goes in any file: the first tool call opens a sign-in in the browser.
+
+It only ever adds its own: the `since` entry in the three config files, its two rule files, and its marked block in `GEMINI.md` and `AGENTS.md`. Everything else in those files stays as it is, a second run changes nothing, and a file it cannot read as plain JSON is left alone with the lines to add by hand.
 
 ## What it sends
 

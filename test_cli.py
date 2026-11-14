@@ -11,7 +11,7 @@ import unittest
 
 from since_dev import __version__
 from since_dev.cli import parse_args, run
-from since_dev.init import BLOCK, MCP_URL, RULE, TARGETS, merge_config, merge_rule
+from since_dev.init import BLOCK, CLAUDE_RULE, CURSOR_RULE, MCP_URL, RULE, RULES, TARGETS, merge_config, merge_rule, merge_whole, said_yes
 from since_dev.local import PATTERNS, check_body, parse_repo, pattern_regexp
 from since_dev.render import ago, wait
 
@@ -218,12 +218,27 @@ class Pieces(unittest.TestCase):
         stale = added["text"].replace("## Since.dev", "## An older heading")
         self.assertEqual(merge_rule(stale)["text"], added["text"])
 
+    def test_init_gives_each_coding_agent_its_own_rule(self):
+        self.assertEqual([rule["file"] for rule in RULES], [".claude/rules/since.md", ".cursor/rules/since.mdc", "GEMINI.md", "AGENTS.md"])
+        for text in [CLAUDE_RULE, CURSOR_RULE, BLOCK]:
+            self.assertIn(RULE, text)
+        self.assertRegex(CURSOR_RULE, r"^---\ndescription: .+\nalwaysApply: true\n---\n")
+        self.assertEqual(merge_whole(None, CLAUDE_RULE), {"status": "new", "text": CLAUDE_RULE})
+        self.assertEqual(merge_whole(CLAUDE_RULE, CLAUDE_RULE)["status"], "same")
+        self.assertEqual(merge_whole("# Since.dev\n\nAn older rule.\n", CLAUDE_RULE), {"status": "updated", "text": CLAUDE_RULE})
+        for yes in ["y", "Y", "yes", " Yes \n", "y\n"]:
+            self.assertTrue(said_yes(yes), yes)
+        for no in ["", "\n", "n", "no", "yep", "sure", None]:
+            self.assertFalse(said_yes(no), str(no))
+
     def test_the_two_packages_carry_the_same_constants(self):
         """What is written twice, once per language, is the same twice."""
         script = read("src", "init.mjs")
-        for line in RULE.split("\n"):
-            if line:
-                self.assertIn(json.dumps(line, ensure_ascii=False), script)
+        for paragraph in RULE.split("\n\n"):
+            self.assertIn(json.dumps(paragraph, ensure_ascii=False), script)
+        # The whole-file rules are built from the same header and words in both.
+        for constant in [CLAUDE_RULE, CURSOR_RULE]:
+            self.assertIn(json.dumps(constant.replace(RULE, "${RULE}"), ensure_ascii=False)[1:-1], script)
         local = read("src", "local.mjs")
         for pattern in PATTERNS:
             self.assertIn('"%s"' % pattern, local)

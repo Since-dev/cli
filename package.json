@@ -1,6 +1,6 @@
 {
   "name": "since-dev",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Find the code in a repository that is about to stop working: retired model IDs, runtimes past end of life, breaking dependency changes. Each with its date, its line and its replacement.",
   "license": "MIT",
   "author": "Nabil A <support@since.dev>",

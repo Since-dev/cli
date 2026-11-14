@@ -7,7 +7,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { test } from "node:test"
 
 import { VERSION, parseArgs, run } from "./src/cli.mjs"
-import { BLOCK, MCP_URL, TARGETS, mergeConfig, mergeRule } from "./src/init.mjs"
+import { BLOCK, CLAUDE_RULE, CURSOR_RULE, MCP_URL, RULE, RULES, TARGETS, mergeConfig, mergeRule, mergeWhole, saidYes } from "./src/init.mjs"
 import { checkBody, parseRepo, patternRegExp } from "./src/local.mjs"
 import { ago, wait } from "./src/render.mjs"
 
@@ -179,4 +179,27 @@ test("init adds its own entry and nothing else, and a second run changes nothing
   const stale = added.text.replace("## Since.dev", "## An older heading")
   assert.equal(mergeRule(stale).text, added.text)
   assert.equal(mergeRule(`${added.text}\nMore of the team's own rules.\n`).status, "same")
+})
+
+test("init gives each coding agent its own rule, the same words in each, and writes nothing without a yes", () => {
+  // One file per agent: Claude Code reads no AGENTS.md when a repository has a CLAUDE.md, so it gets a rule of its own.
+  assert.deepEqual(RULES.map((rule) => rule.file), [".claude/rules/since.md", ".cursor/rules/since.mdc", "GEMINI.md", "AGENTS.md"])
+  for (const text of [CLAUDE_RULE, CURSOR_RULE, BLOCK]) assert.ok(text.includes(RULE))
+  // Cursor's applies in every chat, with no list of files to wait for.
+  assert.match(CURSOR_RULE, /^---\ndescription: .+\nalwaysApply: true\n---\n/)
+  // The rule says what Since checks, when to call it (before the write, never after the task), which tool, and when not to; it never
+  // orders a check on everything.
+  assert.match(RULE, /^Since\.dev \(the `since` MCP server\) checks AI model ids/)
+  assert.match(RULE, /\n\nCall it before you write an AI model id, add or upgrade a dependency/)
+  assert.match(RULE, /\n\nWhich tool:\n- whats_changed: .+\n- check_code: .+\n- fix_code: /)
+  assert.match(RULE, /\n\nSkip it for code that uses no package, model, API or runtime, [^\n]+\.$/)
+  assert.doesNotMatch(RULE, /before you finish/)
+  assert.doesNotMatch(RULE, /\b(always|must|every task|MUST|CRITICAL)\b/)
+
+  assert.deepEqual(mergeWhole(null, CLAUDE_RULE), { status: "new", text: CLAUDE_RULE })
+  assert.equal(mergeWhole(CLAUDE_RULE, CLAUDE_RULE).status, "same")
+  assert.deepEqual(mergeWhole("# Since.dev\n\nAn older rule.\n", CLAUDE_RULE), { status: "updated", text: CLAUDE_RULE })
+
+  for (const yes of ["y", "Y", "yes", " Yes \n", "y\n"]) assert.equal(saidYes(yes), true, yes)
+  for (const no of ["", "\n", "n", "no", "yep", "sure", null, undefined]) assert.equal(saidYes(no), false, String(no))
 })

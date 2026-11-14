@@ -1,5 +1,8 @@
 // `since init`: the files that put Since in front of a coding agent, written into the repository so a clone carries them.
 // It adds its own entry and nothing else: other servers stay as they are, and a file it cannot read as JSON is left alone.
+// Two kinds of file: the MCP server's entry for each editor, and a rule for each coding agent, which is what gets a check made
+// without being asked for. Each agent reads its own file (Claude Code reads no AGENTS.md when a repository has a CLAUDE.md), so
+// each gets one. Nothing is written until the person says yes: it shows what it would write, then asks.
 
 export const MCP_URL = "https://api.since.dev/mcp"
 export const TARGETS = [
@@ -7,19 +10,28 @@ export const TARGETS = [
   { file: ".cursor/mcp.json", key: "mcpServers", entry: { url: MCP_URL }, what: "Cursor" },
   { file: ".vscode/mcp.json", key: "servers", entry: { type: "http", url: MCP_URL }, what: "VS Code" },
 ]
-export const RULE_FILE = "AGENTS.md"
 export const START = "<!-- since:start -->"
 export const END = "<!-- since:end -->"
-// The rule every listing ships (distribution/cursor/rules/since.mdc); a test holds the two to the same words.
+// The rule, a paragraph to a string: what Since checks, when to call it, which tool, and what to skip. The same words wherever a coding
+// agent reads them: here, in the rule every listing ships (distribution/cursor/rules/since.mdc), in the Python copy, and in what the
+// server says on connect. Tests hold them to the same words.
 export const RULE = [
-  "When you change a dependency version, a manifest or lockfile, an AI model ID, a runtime version, a Docker base image or a CI runner label, check it with the Since.dev MCP tools first:",
-  "",
-  "- `check_code` with the manifest, lockfile, model ID or `surface` (`runtime:<product>@<version>`) reports what is affected, on which line, the days left and the replacement.",
-  "- `whats_changed` with the package and `since` set to the current version lists every breaking change and deprecation between that version and today, each with its source.",
-  "",
-  "Treat `needs_review` and `unknown` as not settled, never as safe. Use the replacement the answer names. `fix_code` opens a fix pull request for a connected repository, and the editor asks before it runs.",
-].join("\n")
+  "Since.dev (the `since` MCP server) checks AI model ids, dependency upgrades, Dockerfiles, GitHub Actions workflows and runtime versions for breaking changes, deprecations and retirements published after your training.",
+  "Call it before you write an AI model id, add or upgrade a dependency, write or edit a Dockerfile, a compose file or a CI workflow (the images, runners, actions and runtime versions they name), set a runtime version (.nvmrc, engines, go.mod, pyproject.toml), or write code that calls an AI model or a fast-changing SDK or API; and when an error follows a version bump or began with no code change. Your training data may not include these changes, even for well-known packages such as react, next, openai or pydantic. Call it even when the version was given to you or the fix seems well known: do what was asked, and report what it finds.",
+  "Which tool:\n- whats_changed: what changed in a package, model, provider, API or runtime since a version, a date or your training cutoff. With provider and current=true, the model ids to use in new code.\n- check_code: what in this code, file, model id or version is affected, on which line, and what to move to. A runtime version from any file is surface (runtime:nodejs@18); a Dockerfile, a compose file or a GitHub Actions workflow is code with its path.\n- fix_code: the fix, for a snippet or a connected repository. It runs the check itself.",
+  "Skip it for code that uses no package, model, API or runtime, for general programming questions, and for the repository's own git history.",
+].join("\n\n")
 export const BLOCK = `${START}\n## Since.dev\n\n${RULE}\n${END}`
+// A rule file of its own is the whole file. Cursor's carries the header that makes it apply in every chat.
+export const CLAUDE_RULE = `# Since.dev\n\n${RULE}\n`
+export const CURSOR_RULE = `---\ndescription: Check AI model ids, dependencies, Dockerfiles, CI files and runtime versions with Since.dev\nalwaysApply: true\n---\n\n${RULE}\n`
+// Each coding agent's rule: a file of Since's own where the agent reads a folder of rules, a marked block in the file it shares with the team's own.
+export const RULES = [
+  { file: ".claude/rules/since.md", what: "Claude Code's rule", whole: CLAUDE_RULE },
+  { file: ".cursor/rules/since.mdc", what: "Cursor's rule", whole: CURSOR_RULE },
+  { file: "GEMINI.md", what: "Gemini CLI's rule" },
+  { file: "AGENTS.md", what: "the rule Codex and other agents read" },
+]
 
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value)
 
@@ -62,6 +74,15 @@ export function mergeRule(text) {
   return next === text ? { status: "same", text } : { status: "updated", text: next }
 }
 
+/** A file that is Since's own, whole: written when it is missing, replaced when it holds an older rule. */
+export function mergeWhole(text, whole) {
+  if (text === null || text.trim() === "") return { status: "new", text: whole }
+  return text === whole ? { status: "same", text } : { status: "updated", text: whole }
+}
+
+/** Whether an answer to a yes-or-no question is a yes. Anything else, an empty line included, is a no. */
+export const saidYes = (answer) => /^\s*y(es)?\s*$/i.test(String(answer ?? ""))
+
 const WORDS = {
   new: ["Wrote", "Would write"],
   updated: ["Updated", "Would update"],
@@ -69,34 +90,38 @@ const WORDS = {
   skipped: ["Skipped", "Skipped"],
 }
 
-export function init(io, program, dryRun) {
+export async function init(io, program, { dryRun = false, yes = false } = {}) {
   const root = io.root()
-  const lines = [""]
-  const skipped = []
-  let changed = 0
   const rows = TARGETS.map((target) => ({ ...target, result: mergeConfig(io.readFile(`${root}/${target.file}`), target.key, target.entry) }))
-  rows.push({ file: RULE_FILE, what: "the rule every coding agent reads", result: mergeRule(io.readFile(`${root}/${RULE_FILE}`)) })
-  for (const row of rows) {
-    const { status, text } = row.result
-    if (status === "new" || status === "updated") {
-      changed += 1
-      if (!dryRun) io.writeFile(`${root}/${row.file}`, text, null)
-    }
-    if (status === "skipped") skipped.push(row)
-    lines.push(`  ${WORDS[status][dryRun ? 1 : 0].padEnd(14)}${row.file.padEnd(20)}${row.what}`)
+  for (const rule of RULES) {
+    const text = io.readFile(`${root}/${rule.file}`)
+    rows.push({ ...rule, result: rule.whole ? mergeWhole(text, rule.whole) : mergeRule(text) })
   }
-  lines.push("")
-  for (const row of skipped) {
-    lines.push(`  ${row.file} is not plain JSON, so it was left alone. Add this under "${row.key}" by hand:`)
-    lines.push(`    "since": ${JSON.stringify(row.entry)}`)
-    lines.push("")
+  const changes = rows.filter((row) => row.result.status === "new" || row.result.status === "updated")
+  const skipped = rows.filter((row) => row.result.status === "skipped")
+  const width = Math.max(...rows.map((row) => row.file.length)) + 2
+  /** The list of files, as what would happen or as what did. */
+  const listing = (wrote) => ["", ...rows.map((row) => `  ${WORDS[row.result.status][wrote ? 0 : 1].padEnd(14)}${row.file.padEnd(width)}${row.what}`), ""]
+  const byHand = skipped.flatMap((row) => [`  ${row.file} is not plain JSON, so it was left alone. Add this under "${row.key}" by hand:`, `    "since": ${JSON.stringify(row.entry)}`, ""])
+  const them = changes.length === 1 ? "it" : "them"
+  const say = (lines) => io.out(`${lines.join("\n")}\n`)
+  const next = ["  Commit these files: everyone who clones this repository gets the same setup.", "  The first tool call opens a sign-in in the browser. No key goes in any file."]
+
+  if (!changes.length) {
+    say([...listing(true), ...byHand, "  Everything is already set up."])
+    return 0
   }
-  if (dryRun) lines.push(changed ? `  Nothing was written. Run ${program} init to write ${changed === 1 ? "it" : "them"}.` : "  Everything is already set up.")
-  else if (changed) {
-    lines.push("  Commit these files: everyone who clones this repository gets the same setup.")
-    lines.push("  The first tool call opens a sign-in in the browser. No key goes in any file.")
-  } else lines.push("  Everything is already set up.")
-  lines.push("")
-  io.out(lines.join("\n"))
+  // Nothing is written before a yes: --yes on the command line, or the answer to the question. With nobody to ask, it says how.
+  if (yes && !dryRun) {
+    for (const row of changes) io.writeFile(`${root}/${row.file}`, row.result.text, null)
+    say([...listing(true), ...byHand, ...next])
+    return 0
+  }
+  say([...listing(false), ...byHand])
+  if (dryRun) return say([`  Nothing was written. Run ${program} init to write ${them}.`]), 0
+  if (!io.tty) return say([`  Nothing was written: there is nobody to ask here. Run ${program} init --yes to write ${them}.`]), 0
+  if (!saidYes(await io.prompt(`  Write ${changes.length === 1 ? "this file" : `these ${changes.length} files`}? [y/N] `))) return say(["  Nothing was written."]), 0
+  for (const row of changes) io.writeFile(`${root}/${row.file}`, row.result.text, null)
+  say(["", `  Wrote ${changes.length === 1 ? "it" : `${changes.length} files`}.`, ...next])
   return 0
 }

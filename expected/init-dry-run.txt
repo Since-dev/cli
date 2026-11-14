@@ -1,9 +1,12 @@
 $ since init --dry-run
 
-  Would update  .mcp.json           Claude Code
-  Unchanged     .cursor/mcp.json    Cursor
-  Skipped       .vscode/mcp.json    VS Code
-  Would update  AGENTS.md           the rule every coding agent reads
+  Would update  .mcp.json                Claude Code
+  Unchanged     .cursor/mcp.json         Cursor
+  Skipped       .vscode/mcp.json         VS Code
+  Would write   .claude/rules/since.md   Claude Code's rule
+  Would write   .cursor/rules/since.mdc  Cursor's rule
+  Would write   GEMINI.md                Gemini CLI's rule
+  Would update  AGENTS.md                the rule Codex and other agents read
 
   .vscode/mcp.json is not plain JSON, so it was left alone. Add this under "servers" by hand:
     "since": {"type":"http","url":"https://api.since.dev/mcp"}

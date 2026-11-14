@@ -50,7 +50,15 @@ export function realIo() {
     },
     prompt(question) {
       const terminal = createInterface({ input: process.stdin, output: process.stderr })
-      return new Promise((resolve) => terminal.question(question, (answer) => (terminal.close(), resolve(answer))))
+      // Input that ends with no answer (Ctrl-D, a closed pipe) is no answer, and the caller still hears back: without this the
+      // question never settles and the command ends in silence.
+      return new Promise((resolve) => {
+        terminal.once("close", () => resolve(null))
+        terminal.question(question, (answer) => {
+          resolve(answer)
+          terminal.close()
+        })
+      })
     },
     readFile(file) {
       try {
