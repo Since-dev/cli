@@ -17,10 +17,6 @@ Run it inside any repository. A public GitHub repository needs no sign-in and no
             src/ai/client.ts:6  and 1 more   use claude-sonnet-5-5
             https://platform.claude.com/docs/en/about-claude/model-deprecations
 
-  31 days   gpt-5 on OpenAI API: retirement 2026-12-11
-            src/ai/summarize.ts:8   use gpt-5.6-sol
-            https://developers.openai.com/api/docs/deprecations
-
   passed    Node.js 20: end of life 2026-04-30
             .github/workflows/ci.yml   use 24
             https://endoflife.date/nodejs
@@ -39,7 +35,7 @@ Run it inside any repository. A public GitHub repository needs no sign-in and no
   Next          npx since-dev init   your coding agent checks before it writes
 ```
 
-That is the output for [a small demo repository](https://github.com/since-dev-lab/demo-shop) on November 10, 2026. To see it yourself: `npx since-dev since-dev-lab/demo-shop`.
+That is the output for [a small demo repository](https://github.com/since-dev-lab/demo-shop) on November 10, 2026, with one row left out. To see all of it yourself: `npx since-dev since-dev-lab/demo-shop`.
 
 ## Run it
 
