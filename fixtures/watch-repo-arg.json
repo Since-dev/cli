@@ -1,0 +1,13 @@
+{
+  "args": [
+    "--watch",
+    "acme/shop"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "origin": "git@github.com:acme/shop.git",
+  "files": {},
+  "now": "2026-11-21T15:00:00.000Z",
+  "http": []
+}

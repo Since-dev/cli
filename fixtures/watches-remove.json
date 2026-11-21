@@ -1,0 +1,24 @@
+{
+  "args": [
+    "watches",
+    "remove",
+    "0b7e5a90-0000-4000-8000-000000000002"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-21T15:00:00.000Z",
+  "http": [
+    {
+      "request": "DELETE /v1/watches/0b7e5a90-0000-4000-8000-000000000002",
+      "status": 200,
+      "body": {
+        "id": "0b7e5a90-0000-4000-8000-000000000002",
+        "status": "removed",
+        "name": "acme/shop",
+        "subject": "services/worker/pyproject.toml",
+        "deletedForGoodAt": "2026-12-21T15:00:00.840Z"
+      }
+    }
+  ]
+}

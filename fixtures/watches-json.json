@@ -1,0 +1,105 @@
+{
+  "args": [
+    "watches",
+    "--json"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-21T15:00:00.000Z",
+  "http": [
+    {
+      "request": "GET /v1/watches",
+      "status": 200,
+      "body": {
+        "watches": [
+          {
+            "id": "6f1c2d3e-0000-4000-8000-000000000001",
+            "name": "acme/shop",
+            "input": "manifest",
+            "subject": "package.json",
+            "door": "cli",
+            "client": "since-cli/0.3.0",
+            "madeBy": "CI",
+            "createdAt": "2026-11-21T15:00:00.610Z",
+            "renewedAt": "2026-11-21T15:00:00.610Z",
+            "expiresAt": "2027-02-19T15:00:00.610Z",
+            "watched": [
+              "left-pad 1.3.0"
+            ],
+            "watchedCount": 1,
+            "notWatched": [],
+            "baselineComplete": false,
+            "sent": [
+              {
+                "why": "new",
+                "kind": "deprecated",
+                "state": "affected",
+                "where": [
+                  {
+                    "file": "package.json",
+                    "line": 4
+                  }
+                ],
+                "reason": "left-pad is deprecated on npm. Applies to every version of left-pad.",
+                "source": null,
+                "surface": {
+                  "key": "package:npm:left-pad",
+                  "kind": "package",
+                  "name": "left-pad",
+                  "purl": "pkg:npm/left-pad",
+                  "provider": "npm",
+                  "ecosystem": "npm"
+                },
+                "version": "1.3.0",
+                "changeId": "193113b3-5c04-4097-98e0-aa7548f2db21",
+                "daysLeft": null,
+                "headline": "left-pad 1.3.0 in package.json line 4 is deprecated",
+                "severity": "medium",
+                "replacement": null,
+                "effectiveDate": null,
+                "sentAt": "2026-11-21T15:00:00.689Z"
+              }
+            ],
+            "sentCount": 1,
+            "lastLookedAt": "2026-11-21T15:00:00.689Z"
+          },
+          {
+            "id": "0b7e5a90-0000-4000-8000-000000000002",
+            "name": null,
+            "input": "code",
+            "subject": "src/llm.ts",
+            "door": "mcp",
+            "client": "Claude Code",
+            "madeBy": "Ada Lovelace",
+            "createdAt": "2026-11-21T15:00:00.637Z",
+            "renewedAt": "2026-11-21T15:00:00.637Z",
+            "expiresAt": "2027-01-30T15:00:00.000Z",
+            "watched": [
+              "gpt-4o"
+            ],
+            "watchedCount": 1,
+            "notWatched": [],
+            "baselineComplete": true,
+            "sent": [],
+            "sentCount": 0,
+            "lastLookedAt": null
+          }
+        ],
+        "active": 2,
+        "limit": 100,
+        "ended": [
+          {
+            "id": "9a4d1c22-0000-4000-8000-000000000003",
+            "name": "acme/shop",
+            "input": "manifest",
+            "subject": "services/worker/pyproject.toml",
+            "endedAt": "2026-11-20T15:00:00.000Z",
+            "reason": "removed",
+            "deletedForGoodAt": "2026-12-20T15:00:00.000Z"
+          }
+        ]
+      }
+    }
+  ]
+}

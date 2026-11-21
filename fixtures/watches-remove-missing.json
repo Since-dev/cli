@@ -1,0 +1,21 @@
+{
+  "args": [
+    "watches",
+    "remove",
+    "6f1c2d3e-0000-4000-8000-00000000ffff"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-21T15:00:00.000Z",
+  "http": [
+    {
+      "request": "DELETE /v1/watches/6f1c2d3e-0000-4000-8000-00000000ffff",
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "message": "No watch with that id in this workspace."
+      }
+    }
+  ]
+}

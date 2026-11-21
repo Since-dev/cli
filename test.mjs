@@ -6,7 +6,7 @@ import assert from "node:assert/strict"
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { test } from "node:test"
 
-import { VERSION, parseArgs, run } from "./src/cli.mjs"
+import { VERSION, parseArgs, run, watchName } from "./src/cli.mjs"
 import { BLOCK, CLAUDE_RULE, CURSOR_RULE, MCP_URL, RULE, RULES, TARGETS, mergeConfig, mergeRule, mergeWhole, saidYes } from "./src/init.mjs"
 import { checkBody, parseRepo, patternRegExp } from "./src/local.mjs"
 import { ago, wait } from "./src/render.mjs"
@@ -25,8 +25,10 @@ function canonical(value) {
 }
 
 export async function replay(fixture) {
+  // The folder the CLI runs in; a fixture names another to test what the folder's own name does.
+  const cwd = fixture.cwd ?? CWD
   const files = new Map()
-  for (const [name, content] of Object.entries(fixture.files ?? {})) files.set(name.startsWith("/") ? name : `${CWD}/${name}`, content)
+  for (const [name, content] of Object.entries(fixture.files ?? {})) files.set(name.startsWith("/") ? name : `${cwd}/${name}`, content)
   const out = []
   const err = []
   const log = []
@@ -37,7 +39,7 @@ export async function replay(fixture) {
     runtime: "node",
     program: fixture.program ?? "since",
     env: fixture.env ?? {},
-    cwd: CWD,
+    cwd,
     home: HOME,
     platform: "linux",
     tty: Boolean(fixture.tty),
@@ -61,7 +63,7 @@ export async function replay(fixture) {
       return { status: next.status, retryAfter: next.retryAfter ?? null, text: JSON.stringify(next.body) }
     },
     origin: () => fixture.origin ?? null,
-    root: () => CWD,
+    root: () => cwd,
     open: (url) => void log.push(`open ${url}`),
     prompt: async (question) => {
       log.push(`prompt ${question.trim()}`)
@@ -70,7 +72,7 @@ export async function replay(fixture) {
     readFile: (file) => (files.has(file) ? files.get(file) : null),
     writeFile(file, text, mode) {
       files.set(file, text)
-      wrote.push(`--- wrote ${file.startsWith(`${CWD}/`) ? file.slice(CWD.length + 1) : file}${mode === null ? "" : ` mode ${mode.toString(8)}`}\n${text}`)
+      wrote.push(`--- wrote ${file.startsWith(`${cwd}/`) ? file.slice(cwd.length + 1) : file}${mode === null ? "" : ` mode ${mode.toString(8)}`}\n${text}`)
     },
     remove(file) {
       if (!files.delete(file)) return false
@@ -130,6 +132,18 @@ test("a repository is read from every form of name and remote", () => {
   assert.deepEqual(parseRepo("git@gitlab.com:acme/shop.git"), { host: "gitlab.com", owner: "acme", name: "shop" })
   assert.deepEqual(parseRepo("https://github.com/acme/shop.js"), { host: "github.com", owner: "acme", name: "shop.js" })
   for (const form of ["", "shop", "../shop", "/srv/git/shop.git", "file:///srv/git/shop.git", "C:\\code\\shop", null]) assert.equal(parseRepo(form), null, String(form))
+})
+
+test("a watch is named as the API takes a name: one line, at most 100 characters, never a bare true or false", () => {
+  const named = (cwd, origin = null) => watchName({ cwd, origin: () => origin })
+  assert.equal(named("/home/dev/false"), "./false")
+  assert.equal(named("/home/dev/TRUE"), "./TRUE")
+  assert.equal(named("/home/dev/my\nproject"), "my project")
+  assert.equal(named("/"), "this folder")
+  assert.equal(named("/home/dev/shop", "git@github.com:acme/shop.git"), "acme/shop")
+  assert.equal(named("/x", `git@github.com:${"o".repeat(39)}/${"r".repeat(70)}.git`), `${"o".repeat(39)}/${"r".repeat(60)}`)
+  // Cut at a whole character: a character of two UTF-16 units that would pass 100 is left out.
+  assert.equal(named(`/x/${"a".repeat(99)}\u{1F600}`), "a".repeat(99))
 })
 
 test("manifests match the patterns the Action uses, and a lockfile is sent as one", () => {

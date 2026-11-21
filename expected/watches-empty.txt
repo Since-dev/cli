@@ -1,0 +1,8 @@
+$ since watches
+
+  Watches  0 of 100
+
+  Nothing watched yet. Add --watch to since check, or watch: true to a check.
+--- log
+GET /v1/watches key
+--- exit 0

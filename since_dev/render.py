@@ -394,6 +394,46 @@ def unique_changes(changes):
     return unique
 
 
+READ_WORDS = {"full": "read in full", "partial": "read in part", "unreadable": "had nothing to read", "failed": "could not be read", "reading": "still being read"}
+SHOWN_RELEASES = 20
+
+
+def _whole(value):
+    return int(value) if is_number(value) else 0
+
+
+def release_lines(releases, since, to, show_all):
+    """A move's releases (changed --since --to): how many were read how, then each release with its date and how it was read.
+
+    Returns the lines and whether --all would show more of them.
+    """
+    listed = releases.get("list")
+    listed = [release for release in listed if isinstance(release, dict)] if isinstance(listed, list) else []
+    total = _whole(releases.get("releases"))
+    parts = [
+        "%s read in full" % num(_whole(releases.get("full"))) if _whole(releases.get("full")) else "",
+        "%s in part" % num(_whole(releases.get("partial"))) if _whole(releases.get("partial")) else "",
+        "%s had nothing to read" % num(_whole(releases.get("unreadable"))) if _whole(releases.get("unreadable")) else "",
+        "%s could not be read" % num(_whole(releases.get("failed"))) if _whole(releases.get("failed")) else "",
+        "%s still being read" % num(_whole(releases.get("reading"))) if _whole(releases.get("reading")) else "",
+    ]
+    parts = [part for part in parts if part]
+    lines = ["  %s from %s to %s%s" % (plural(total, "release") if total else "No releases", since, to, ": %s" % ", ".join(parts) if parts else "")]
+    shown = listed if show_all else listed[:SHOWN_RELEASES]
+    width = max([0] + [len(str(release.get("version"))) for release in shown])
+    for release in shown:
+        not_read = release.get("notRead")
+        missing = "; not read: %s" % ", ".join(str(item) for item in not_read) if release.get("read") == "partial" and isinstance(not_read, list) and not_read else ""
+        words = READ_WORDS.get(release.get("read"), str(release.get("read")))
+        lines.append("    %s   %s   %s%s" % (str(release.get("version")).ljust(width), str(release.get("date") or "no date").ljust(10), words, missing))
+    if len(shown) < len(listed):
+        lines.append("    and %s" % plural(len(listed) - len(shown), "more release"))
+    omitted = _whole(releases.get("omitted"))
+    if omitted:
+        lines.append("    and %s not covered here: give a later --since for %s" % (plural(omitted, "older release"), "it" if omitted == 1 else "them"))
+    return lines, len(shown) < len(listed)
+
+
 def change_lines(changes, c):
     """One line per change of a package, with the version, the date and the source under it."""
     lines = []

@@ -1,0 +1,4 @@
+$ since check --watch
+--- stderr
+Watching needs a key. Sign in first: since login
+--- exit 2

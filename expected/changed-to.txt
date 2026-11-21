@@ -1,0 +1,20 @@
+$ since changed express --since 4.19.2 --to 4.21.2
+
+  express  npm  latest 5.3.0
+  2 changes from 4.19.2 to 4.21.2
+
+  deprecated         res.clearCookie: the maxAge and expires options are deprecated in express 4.21.0
+                     in 4.21.0   https://github.com/expressjs/express/releases/tag/4.21.0
+  behavior changed   express.urlencoded limits nested objects to a depth of 32 by default in express 4.20.0
+                     in 4.20.0   https://github.com/expressjs/express/releases/tag/4.20.0
+
+  4 releases from 4.19.2 to 4.21.2: 2 read in full, 1 in part, 1 still being read
+    4.20.0   2024-09-10   read in full
+    4.21.0   2024-10-08   read in part; not read: part of the package's code, a migration guide
+    4.21.1   2024-10-08   read in full
+    4.21.2   no date      still being read
+
+  Since is reading some of these releases now. Run this again in a few minutes to include them.
+--- log
+GET /v1/changes?package=express&ecosystem=npm&since=4.19.2&to=4.21.2&limit=20 key
+--- exit 0

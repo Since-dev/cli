@@ -1,0 +1,18 @@
+$ since watches
+
+  Watches  2 of 100
+
+  package.json  acme/shop
+                manifest  CLI  1 watched  until 2027-02-19
+                Found 1: left-pad 1.3.0 in package.json line 4 is deprecated
+                Remove: since watches remove 6f1c2d3e-0000-4000-8000-000000000001
+
+  src/llm.ts
+                code  MCP (Claude Code)  1 watched  until 2027-01-30
+                Nothing new found yet
+                Remove: since watches remove 0b7e5a90-0000-4000-8000-000000000002
+
+  Ended in the last 30 days: 1. What each kept is deleted 30 days after it ended.
+--- log
+GET /v1/watches key
+--- exit 0

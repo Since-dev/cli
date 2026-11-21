@@ -1,0 +1,13 @@
+{
+  "args": [
+    "changed",
+    "express",
+    "--to",
+    "4.21.2"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-21T15:00:00.000Z",
+  "http": []
+}

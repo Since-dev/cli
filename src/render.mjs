@@ -308,6 +308,38 @@ export function uniqueChanges(changes) {
   })
 }
 
+/** How a release of a move was read, in words (`releases.list[].read`). */
+const READ_WORDS = { full: "read in full", partial: "read in part", unreadable: "had nothing to read", failed: "could not be read", reading: "still being read" }
+const SHOWN_RELEASES = 20
+const count = (value) => (typeof value === "number" && Number.isFinite(value) ? Math.trunc(value) : 0)
+
+/**
+ * A move's releases (`changed --since --to`): how many were read how, then each release with its date and how it was read, and what a
+ * release read in part did not read. `more` is true when --all would show more of them.
+ */
+export function releaseLines(releases, since, to, all) {
+  const list = Array.isArray(releases.list) ? releases.list.filter((release) => release !== null && typeof release === "object") : []
+  const total = count(releases.releases)
+  const parts = [
+    count(releases.full) ? `${num(count(releases.full))} read in full` : "",
+    count(releases.partial) ? `${num(count(releases.partial))} in part` : "",
+    count(releases.unreadable) ? `${num(count(releases.unreadable))} had nothing to read` : "",
+    count(releases.failed) ? `${num(count(releases.failed))} could not be read` : "",
+    count(releases.reading) ? `${num(count(releases.reading))} still being read` : "",
+  ].filter(Boolean)
+  const lines = [`  ${total ? plural(total, "release") : "No releases"} from ${since} to ${to}${parts.length ? `: ${parts.join(", ")}` : ""}`]
+  const shown = all ? list : list.slice(0, SHOWN_RELEASES)
+  const width = Math.max(0, ...shown.map((release) => String(release.version).length))
+  for (const release of shown) {
+    const missing = release.read === "partial" && Array.isArray(release.notRead) && release.notRead.length ? `; not read: ${release.notRead.join(", ")}` : ""
+    lines.push(`    ${String(release.version).padEnd(width)}   ${String(release.date || "no date").padEnd(10)}   ${READ_WORDS[release.read] ?? String(release.read)}${missing}`)
+  }
+  if (shown.length < list.length) lines.push(`    and ${plural(list.length - shown.length, "more release")}`)
+  const omitted = count(releases.omitted)
+  if (omitted) lines.push(`    and ${plural(omitted, "older release")} not covered here: give a later --since for ${omitted === 1 ? "it" : "them"}`)
+  return { lines, more: shown.length < list.length }
+}
+
 export function changeLines(changes, c) {
   const lines = []
   for (const change of changes) {

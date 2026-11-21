@@ -1,0 +1,33 @@
+$ since changed zod --since 1.0.0 --to 1.25.0
+
+  zod  npm  latest 4.1.0
+  No changes recorded from 1.0.0 to 1.25.0
+
+  22 releases from 1.0.0 to 1.25.0: 20 read in full, 1 had nothing to read, 1 could not be read
+    1.4.0    2026-01-05   read in full
+    1.5.0    2026-01-20   read in full
+    1.6.0    2026-02-05   read in full
+    1.7.0    2026-02-20   had nothing to read
+    1.8.0    2026-03-05   read in full
+    1.9.0    2026-03-20   read in full
+    1.10.0   2026-04-05   read in full
+    1.11.0   2026-04-20   could not be read
+    1.12.0   2026-05-05   read in full
+    1.13.0   2026-05-20   read in full
+    1.14.0   2026-06-05   read in full
+    1.15.0   2026-06-20   read in full
+    1.16.0   2026-07-05   read in full
+    1.17.0   2026-07-20   read in full
+    1.18.0   2026-08-05   read in full
+    1.19.0   2026-08-20   read in full
+    1.20.0   2026-09-05   read in full
+    1.21.0   2026-09-20   read in full
+    1.22.0   2026-10-05   read in full
+    1.23.0   2026-10-20   read in full
+    and 2 more releases
+    and 3 older releases not covered here: give a later --since for them
+
+  More          since changed zod --since 1.0.0 --to 1.25.0 --all
+--- log
+GET /v1/changes?package=zod&ecosystem=npm&since=1.0.0&to=1.25.0&limit=20 key
+--- exit 0

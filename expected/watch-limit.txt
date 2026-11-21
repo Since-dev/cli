@@ -1,0 +1,13 @@
+$ since --watch
+
+  This folder  1 manifest checked
+  No findings   0 checked
+
+  services/worker/pyproject.toml: Not watched: this workspace already watches 100 checks, the most it can. Remove one under API keys in the app or with DELETE /v1/watches/:id, then check again.
+  Not fully checked yet: runtime:python >=3.8. --json says why.
+  Only manifests were checked. Connect the repository to check its code too: https://app.since.dev?utm_source=cli
+
+  Next          since init   your coding agent checks before it writes
+--- log
+POST /v1/check key {"detail":"summary","manifest":{"content":"[project]\nname = \"worker\"\nrequires-python = \">=3.8\"\n","path":"services/worker/pyproject.toml"},"watch":"acme/shop"}
+--- exit 0

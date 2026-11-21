@@ -18,9 +18,9 @@ from .local import MAX_CHARACTERS, check_body, find_manifests, parse_repo
 DEFAULT_API = "https://api.since.dev"
 SITE = "https://since.dev"
 APP = "https://app.since.dev"
-COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "help", "version"]
-SWITCHES = ["all", "json", "local", "dry-run", "yes", "no-color", "help", "version"]
-OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "email", "max-files"]
+COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "help", "version"]
+SWITCHES = ["all", "json", "local", "watch", "dry-run", "yes", "no-color", "help", "version"]
+OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files"]
 FAIL_ON = ["low", "medium", "high", "critical", "none"]
 MAX_PAGES = 10
 MAX_WAIT_MS = 60000
@@ -73,16 +73,20 @@ def help_text(p):
         [" init", "set up your coding agent to check before it writes"],
         [" login", "sign in, for private repositories"],
         [" logout", "remove the stored key"],
+        [" watches", "list what this workspace watches"],
+        [" watches remove <id>", "stop watching one"],
     ]
     options = [
         ["--all", "show every finding"],
         ["--json", "print the answer as JSON"],
         ["--local", "check the manifests in this folder, not GitHub"],
+        ["--watch", "check: keep watching the manifests here"],
         ["--fail-on <level>", "check: low, medium, high (default), critical or none"],
         ["--within <days>", "only dates within this many days, as 30d"],
         ["--provider <name>", "calendar: one provider, as openai"],
         ["--ecosystem <name>", "changed: the registry, as npm (default) or pypi"],
         ["--since <version>", "changed: only what changed after this version"],
+        ["--to <version>", "changed: up to this version, with how each release was read"],
         ["--email <address>", "login: the email to sign in with"],
         ["--dry-run", "init: show what would be written"],
         ["--yes", "init: write without asking"],
@@ -284,8 +288,32 @@ def connected_check(ctx, full_name):
     return {"answer": answer["json"], "repo": repo}
 
 
+# The longest watch name the API takes, in UTF-16 code units as it counts them.
+WATCH_NAME_MAX = 100
+
+
+def watch_name(io):
+    """What a watch of this folder is called: owner/repo from the origin remote, else the folder's own name. Always a name the API takes:
+    on one line, at most 100 characters (cut at a whole character), and never a bare true or false, which the API reads as turning
+    watching on or off: a folder named false is watched as ./false."""
+    repo = parse_repo(io.origin())
+    if repo:
+        raw = "%s/%s" % (repo["owner"], repo["name"])
+    else:
+        parts = [part for part in re.split(r"[\\/]", io.cwd) if part]
+        raw = parts[-1] if parts else ""
+    name, units = "", 0
+    for character in re.sub(r"[\x00-\x1f\x7f]+", " ", raw).strip():
+        width = 2 if ord(character) > 0xFFFF else 1
+        if units + width > WATCH_NAME_MAX:
+            break
+        name, units = name + character, units + width
+    name = name.strip() or "this folder"
+    return "./" + name if re.fullmatch(r"(?:true|false)", name, re.IGNORECASE) else name
+
+
 def local_check(ctx, no_origin):
-    """The manifests in this folder, sent one by one as the GitHub Action sends them."""
+    """The manifests in this folder, sent one by one as the GitHub Action sends them; with --watch, each one watched under the folder's name."""
     io, p, check = ctx["io"], ctx["p"], ctx["check"]
     if not ctx["key"]:
         if no_origin:
@@ -299,6 +327,7 @@ def local_check(ctx, no_origin):
         return 2 if check else 1
     files = []
     notes = []
+    watch = watch_name(io) if ctx["args"]["flags"].get("watch") else None
     last = None
     if len(found) > ctx["max_files"]:
         notes.append("%s found, the first %d checked (each one costs credits). Raise it with --max-files." % (text.plural(len(found), "manifest"), ctx["max_files"]))
@@ -309,7 +338,10 @@ def local_check(ctx, no_origin):
         elif len(content) > MAX_CHARACTERS:
             notes.append("%s: over %s characters, not sent." % (file, text.num(MAX_CHARACTERS)))
         else:
-            answer = check_all(ctx, check_body(file, content))
+            body = check_body(file, content)
+            if watch is not None:
+                body = dict(body, watch=watch)
+            answer = check_all(ctx, body)
             if _has_findings(answer):
                 files.append({"path": file, "answer": answer["json"]})
             elif answer["status"] in (401, 402):
@@ -404,10 +436,17 @@ def report(ctx, data):
         lines.append("  %s" % "  ".join(part for part in head if part))
         lines.append("  %s   %s checked" % (counts, text.num(checked)))
         notes.extend(data["notes"])
+        # A file --watch could not watch says why, as the answer words it.
+        for file in data["files"]:
+            watch = file["answer"].get("watch")
+            if isinstance(watch, dict) and watch.get("status") != "watching":
+                notes.append("%s: %s" % (file["path"], watch.get("message")))
         notes.extend(text.answer_notes([file["answer"] for file in data["files"]]))
         notes.append("Only manifests were checked. Connect the repository to check its code too: %s?utm_source=cli" % APP)
     lines.append("")
     lines.extend(text.finding_lines(items, show_all, c, more))
+    if data["kind"] == "local":
+        lines.extend(watching_lines(ctx, data["files"]))
     for note in notes:
         lines.append("  %s" % note)
     if notes:
@@ -426,6 +465,26 @@ def report(ctx, data):
     return exit_code
 
 
+def watching_lines(ctx, files):
+    """What --watch made of the manifests: how many are watched, until when and where new findings go. Nothing when none is watched."""
+    watches = [file["answer"]["watch"] for file in files if isinstance(file["answer"].get("watch"), dict) and file["answer"]["watch"].get("status") == "watching"]
+    if not watches:
+        return []
+    dates = sorted(str(first(watch.get("expiresAt"), ""))[:10] for watch in watches if str(first(watch.get("expiresAt"), ""))[:10])
+    until = dates[0] if dates else None
+    name = next((watch["name"] for watch in watches if isinstance(watch.get("name"), str) and watch["name"]), None)
+    webhooks = max([0] + [first(whole_number(watch["delivery"].get("webhooks")), 0) for watch in watches if isinstance(watch.get("delivery"), dict)])
+    email = any(isinstance(watch.get("delivery"), dict) and watch["delivery"].get("email") is True for watch in watches)
+    if webhooks:
+        where = "New findings go to %s%s. List them: %s watches" % (text.plural(webhooks, "webhook endpoint"), " and by email" if email else "", ctx["p"])
+    elif email:
+        where = "New findings go by email. List them: %s watches" % ctx["p"]
+    else:
+        where = "Nothing tells you about new findings yet. Add a webhook: %s/api-keys#webhooks" % APP
+    head = "%s%s%s" % (text.plural(len(watches), "manifest"), " of %s" % name if name else "", " until %s" % until if until else "")
+    return ["  %s%s" % ("Watching".ljust(14), head), "%s%s" % (" " * 16, where), ""]
+
+
 def repo_command(ctx):
     """`since`, `since <owner/repo>` and `since check`: find the repository, then the cheapest way to read it."""
     io, args, p, check = ctx["io"], ctx["args"], ctx["p"], ctx["check"]
@@ -439,6 +498,15 @@ def repo_command(ctx):
     if not from_tree and args["flags"].get("local"):
         io.err("--local checks the folder you are in, so it takes no repository name.\n")
         return 2
+    # A watch keeps what the manifests here hold, read from this folder: a connected repository is watched already, by connecting it.
+    if args["flags"].get("watch"):
+        if not from_tree:
+            io.err("--watch watches the manifests in the folder you are in, so it takes no repository name.\n")
+            return 2
+        if not ctx["key"]:
+            io.err("Watching needs a key. Sign in first: %s login\n" % p)
+            return 2 if check else 1
+        return local_check(ctx, False)
     # In CI with a key, and whenever --local asks: the checkout itself, not the default branch on GitHub.
     if from_tree and (args["flags"].get("local") or (check and ctx["key"])):
         return local_check(ctx, False)
@@ -512,7 +580,9 @@ def changed_command(ctx):
         return 1
     ecosystem = first(args["flags"].get("ecosystem"), "npm")
     since = args["flags"].get("since")
-    answer = call(ctx, "GET", "/v1/changes", query={"package": name, "ecosystem": ecosystem, "since": since, "limit": 200 if args["flags"].get("all") else 20}, key=ctx["key"])
+    to = args["flags"].get("to")
+    show_all = bool(args["flags"].get("all"))
+    answer = call(ctx, "GET", "/v1/changes", query={"package": name, "ecosystem": ecosystem, "since": since, "to": to, "limit": 200 if show_all else 20}, key=ctx["key"])
     if answer["status"] != 200 or answer["json"] is None or not isinstance(answer["json"].get("changes"), list):
         return refuse(ctx, answer)
     if args["flags"].get("json"):
@@ -522,23 +592,31 @@ def changed_command(ctx):
     found = answer["json"]["package"] if isinstance(answer["json"].get("package"), dict) else {}
     head = [c.bold(str(first(found.get("name"), name))), str(first(found.get("ecosystem"), ecosystem)), "latest %s" % found["latest"] if found.get("latest") else ""]
     lines = ["", "  %s" % "  ".join(part for part in head if part)]
+    span = " from %s to %s" % (since, to) if since and to else " since %s" % since if since else ""
     lines.extend(["  %s%s%s" % (
         text.plural(len(changes), "change") if changes else "No changes recorded",
-        " since %s" % since if since else "",
+        span,
         ", and more" if answer["json"].get("nextCursor") else "",
     ), ""])
     lines.extend(text.change_lines(changes, c))
     if changes:
         lines.append("")
+    # A move (--to) lists its releases and how each was read: what Since has and has not read, never a verdict on the move.
+    releases = answer["json"]["releases"] if to and isinstance(answer["json"].get("releases"), dict) else None
+    more = False
+    if releases is not None:
+        moved, more = text.release_lines(releases, since, to, show_all)
+        lines.extend(moved + [""])
     notes = []
     if answer["json"].get("reading"):
-        notes.append("Since is reading newer releases of this package now. Run this again in a few minutes to include them.")
+        notes.append("Since is reading %s now. Run this again in a few minutes to include them." % ("some of these releases" if to else "newer releases of this package"))
     for note in notes:
         lines.append("  %s" % note)
     if notes:
         lines.append("")
-    if answer["json"].get("nextCursor"):
-        lines.extend(["  %s%s changed %s%s%s --all" % ("More".ljust(14), p, name, " --since %s" % since if since else "", " --ecosystem %s" % ecosystem if ecosystem != "npm" else ""), ""])
+    if answer["json"].get("nextCursor") or more:
+        flags = "%s%s%s" % (" --since %s" % since if since else "", " --to %s" % to if to else "", " --ecosystem %s" % ecosystem if ecosystem != "npm" else "")
+        lines.extend(["  %s%s changed %s%s --all" % ("More".ljust(14), p, name, flags), ""])
     io.out("\n".join(lines))
     return 0
 
@@ -587,6 +665,64 @@ def login_command(ctx):
     return 1
 
 
+def door_words(watch):
+    """How a watch arrived, as the list says it: the API, the CLI, or MCP, with the client that made it when known."""
+    if watch.get("door") == "cli":
+        return "CLI"
+    client = watch.get("client")
+    return "%s%s" % (str(first(watch.get("door"), "api")).upper(), " (%s)" % client if isinstance(client, str) and client else "")
+
+
+def watches_command(ctx):
+    """`since watches`: what this workspace watches, and how to stop each."""
+    io, args, p, c = ctx["io"], ctx["args"], ctx["p"], ctx["c"]
+    if not ctx["key"]:
+        io.err("%s watches needs a key. Sign in first: %s login\n" % (p, p))
+        return 1
+    answer = call(ctx, "GET", "/v1/watches", key=ctx["key"])
+    if answer["status"] != 200 or answer["json"] is None or not isinstance(answer["json"].get("watches"), list):
+        return refuse(ctx, answer)
+    if args["flags"].get("json"):
+        io.out("%s\n" % dumps(answer["json"], 2))
+        return 0
+    watches = answer["json"]["watches"]
+    ended = answer["json"]["ended"] if isinstance(answer["json"].get("ended"), list) else []
+    indent = " " * 16
+    active = first(whole_number(answer["json"].get("active")), len(watches))
+    limit = first(whole_number(answer["json"].get("limit")), 100)
+    lines = ["", "  %s  %d of %d" % (c.bold("Watches"), active, limit), ""]
+    if not watches:
+        lines.extend(["  Nothing watched yet. Add --watch to %s check, or watch: true to a check." % p, ""])
+    for watch in watches:
+        name = watch.get("name")
+        lines.append("  %s%s" % (watch.get("subject"), "  %s" % name if isinstance(name, str) and name else ""))
+        lines.append("%s%s" % (indent, "  ".join([str(watch.get("input")), door_words(watch), "%s watched" % text.num(first(whole_number(watch.get("watchedCount")), 0)),
+                                                   "until %s" % str(first(watch.get("expiresAt"), ""))[:10]])))
+        sent = watch["sent"] if isinstance(watch.get("sent"), list) else []
+        count = first(whole_number(watch.get("sentCount")), len(sent))
+        lines.append("%s%s" % (indent, "Found %s: %s" % (text.num(count), sent[0].get("headline")) if count and sent else "Nothing new found yet"))
+        lines.extend(["%sRemove: %s watches remove %s" % (indent, p, watch.get("id")), ""])
+    if ended:
+        lines.extend(["  Ended in the last 30 days: %s. What each kept is deleted 30 days after it ended." % text.num(len(ended)), ""])
+    io.out("\n".join(lines))
+    return 0
+
+
+def remove_watch_command(ctx, watch_id):
+    """`since watches remove <id>`: stop watching one."""
+    io, p = ctx["io"], ctx["p"]
+    if not ctx["key"]:
+        io.err("%s watches needs a key. Sign in first: %s login\n" % (p, p))
+        return 1
+    answer = call(ctx, "DELETE", "/v1/watches/%s" % quote(watch_id, safe=""), key=ctx["key"])
+    if answer["status"] != 200 or answer["json"] is None or not isinstance(answer["json"].get("subject"), str):
+        return refuse(ctx, answer)
+    name = answer["json"].get("name")
+    io.out("Stopped watching %s%s. What it kept is deleted on %s.\n" % (answer["json"]["subject"], " (%s)" % name if isinstance(name, str) and name else "",
+                                                                       str(first(answer["json"].get("deletedForGoodAt"), ""))[:10]))
+    return 0
+
+
 def logout_command(ctx):
     io = ctx["io"]
     removed = io.remove(credentials_path(io))
@@ -616,6 +752,13 @@ def run(argv, io):
     if command == "changed":
         if len(words) != 1:
             return usage("Too many words: %s" % words[1] if words else "%s changed needs a package name, as %s changed react" % (p, p))
+        if "to" in flags and "since" not in flags:
+            return usage("--to needs --since, the version you move from.")
+    elif command == "watches":
+        if words and words[0] != "remove":
+            return usage("Unknown command: watches %s" % words[0])
+        if words and len(words) != 2:
+            return usage("Too many words: %s" % words[2] if len(words) > 2 else "%s watches remove needs a watch's id, as %s watches lists them." % (p, p))
     elif command is None or command == "check":
         if len(words) > 1:
             return usage("Too many words: %s" % words[1])
@@ -654,4 +797,6 @@ def run(argv, io):
         return login_command(ctx)
     if command == "logout":
         return logout_command(ctx)
+    if command == "watches":
+        return remove_watch_command(ctx, words[1]) if words else watches_command(ctx)
     return repo_command(ctx)

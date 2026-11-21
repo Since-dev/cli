@@ -10,7 +10,7 @@ import re
 import unittest
 
 from since_dev import __version__
-from since_dev.cli import parse_args, run
+from since_dev.cli import parse_args, run, watch_name
 from since_dev.init import BLOCK, CLAUDE_RULE, CURSOR_RULE, MCP_URL, RULE, RULES, TARGETS, merge_config, merge_rule, merge_whole, said_yes
 from since_dev.local import PATTERNS, check_body, parse_repo, pattern_regexp
 from since_dev.render import ago, wait
@@ -39,12 +39,14 @@ class FakeIo:
 
     def __init__(self, fixture):
         self.fixture = fixture
+        # The folder the CLI runs in; a fixture names another to test what the folder's own name does.
+        self.cwd = fixture.get("cwd", CWD)
         self.program = fixture.get("program", "since")
         self.env = fixture.get("env", {})
         self.tty = bool(fixture.get("tty"))
         self.files = {}
         for name, content in fixture.get("files", {}).items():
-            self.files[name if name.startswith("/") else "%s/%s" % (CWD, name)] = content
+            self.files[name if name.startswith("/") else "%s/%s" % (self.cwd, name)] = content
         self.printed = []
         self.errors = []
         self.log = []
@@ -84,7 +86,7 @@ class FakeIo:
         return self.fixture.get("origin")
 
     def root(self):
-        return CWD
+        return self.cwd
 
     def open(self, url):
         self.log.append("open %s" % url)
@@ -98,7 +100,7 @@ class FakeIo:
 
     def write_file(self, file, text, mode):
         self.files[file] = text
-        name = file[len(CWD) + 1:] if file.startswith(CWD + "/") else file
+        name = file[len(self.cwd) + 1:] if file.startswith(self.cwd + "/") else file
         self.wrote.append("--- wrote %s%s\n%s" % (name, "" if mode is None else " mode %o" % mode, text))
 
     def remove(self, file):
@@ -171,6 +173,26 @@ class Pieces(unittest.TestCase):
         self.assertEqual(parse_repo("https://github.com/acme/shop.js"), {"host": "github.com", "owner": "acme", "name": "shop.js"})
         for form in ["", "shop", "../shop", "/srv/git/shop.git", "file:///srv/git/shop.git", "C:\\code\\shop", None]:
             self.assertIsNone(parse_repo(form), form)
+
+    def test_a_watch_is_named_as_the_api_takes_a_name(self):
+        class Folder:
+            def __init__(self, cwd, origin=None):
+                self.cwd, self._origin = cwd, origin
+
+            def origin(self):
+                return self._origin
+
+        def named(cwd, origin=None):
+            return watch_name(Folder(cwd, origin))
+
+        self.assertEqual(named("/home/dev/false"), "./false")
+        self.assertEqual(named("/home/dev/TRUE"), "./TRUE")
+        self.assertEqual(named("/home/dev/my\nproject"), "my project")
+        self.assertEqual(named("/"), "this folder")
+        self.assertEqual(named("/home/dev/shop", "git@github.com:acme/shop.git"), "acme/shop")
+        self.assertEqual(named("/x", "git@github.com:%s/%s.git" % ("o" * 39, "r" * 70)), "%s/%s" % ("o" * 39, "r" * 60))
+        # Cut at a whole character: a character of two UTF-16 units that would pass 100 is left out.
+        self.assertEqual(named("/x/" + "a" * 99 + "\U0001F600"), "a" * 99)
 
     def test_manifests_match_the_patterns_the_action_uses(self):
         self.assertTrue(pattern_regexp("**/package.json").fullmatch("package.json"))

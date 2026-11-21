@@ -1,0 +1,58 @@
+{
+  "args": [
+    "--watch"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "origin": "git@github.com:acme/shop.git",
+  "files": {
+    "services/worker/pyproject.toml": "[project]\nname = \"worker\"\nrequires-python = \">=3.8\"\n"
+  },
+  "now": "2026-11-21T15:00:00.000Z",
+  "http": [
+    {
+      "request": "POST /v1/check",
+      "status": 200,
+      "body": {
+        "input": "manifest",
+        "checked": [],
+        "findings": [],
+        "unresolved": [
+          {
+            "name": "runtime:python >=3.8",
+            "reason": "Since does not track the end of life of Python yet.",
+            "where": [
+              {
+                "file": "services/worker/pyproject.toml",
+                "line": 3
+              }
+            ]
+          }
+        ],
+        "truncated": false,
+        "coverage": {
+          "sources": [],
+          "asOf": null,
+          "missing": []
+        },
+        "checkedCount": 0,
+        "totalFindings": 0,
+        "nextCursor": null,
+        "watch": {
+          "id": null,
+          "name": null,
+          "renewed": false,
+          "expiresAt": null,
+          "watched": 0,
+          "delivery": {
+            "webhooks": 0,
+            "email": false
+          },
+          "status": "not_watched",
+          "message": "Not watched: this workspace already watches 100 checks, the most it can. Remove one under API keys in the app or with DELETE /v1/watches/:id, then check again."
+        }
+      }
+    }
+  ]
+}

@@ -8,13 +8,13 @@ import { init } from "./init.mjs"
 import { MAX_CHARACTERS, checkBody, findManifests, parseRepo } from "./local.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.2.2"
+export const VERSION = "0.3.0"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
-const COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "help", "version"]
-const SWITCHES = ["all", "json", "local", "dry-run", "yes", "no-color", "help", "version"]
-const OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "email", "max-files"]
+const COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "help", "version"]
+const SWITCHES = ["all", "json", "local", "watch", "dry-run", "yes", "no-color", "help", "version"]
+const OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files"]
 const FAIL_ON = ["low", "medium", "high", "critical", "none"]
 const MAX_PAGES = 10
 const MAX_WAIT_MS = 60_000
@@ -56,16 +56,20 @@ function help(p) {
     [" init", "set up your coding agent to check before it writes"],
     [" login", "sign in, for private repositories"],
     [" logout", "remove the stored key"],
+    [" watches", "list what this workspace watches"],
+    [" watches remove <id>", "stop watching one"],
   ]
   const options = [
     ["--all", "show every finding"],
     ["--json", "print the answer as JSON"],
     ["--local", "check the manifests in this folder, not GitHub"],
+    ["--watch", "check: keep watching the manifests here"],
     ["--fail-on <level>", "check: low, medium, high (default), critical or none"],
     ["--within <days>", "only dates within this many days, as 30d"],
     ["--provider <name>", "calendar: one provider, as openai"],
     ["--ecosystem <name>", "changed: the registry, as npm (default) or pypi"],
     ["--since <version>", "changed: only what changed after this version"],
+    ["--to <version>", "changed: up to this version, with how each release was read"],
     ["--email <address>", "login: the email to sign in with"],
     ["--dry-run", "init: show what would be written"],
     ["--yes", "init: write without asking"],
@@ -228,7 +232,27 @@ async function connectedCheck(ctx, fullName) {
   return { answer: answer.json, repo }
 }
 
-/** The manifests in this folder, sent one by one as the GitHub Action sends them. */
+/** The longest watch name the API takes, in UTF-16 code units as it counts them. */
+const WATCH_NAME_MAX = 100
+
+/**
+ * What a watch of this folder is called: owner/repo from the origin remote, else the folder's own name. Always a name the API takes:
+ * on one line, at most 100 characters (cut at a whole character), and never a bare true or false, which the API reads as turning
+ * watching on or off: a folder named false is watched as ./false.
+ */
+export function watchName(io) {
+  const repo = parseRepo(io.origin())
+  const raw = repo ? `${repo.owner}/${repo.name}` : io.cwd.split(/[\\/]/).filter(Boolean).pop() || ""
+  let name = ""
+  for (const character of raw.replace(/[\u0000-\u001f\u007f]+/g, " ").trim()) {
+    if (name.length + character.length > WATCH_NAME_MAX) break
+    name += character
+  }
+  name = name.trim() || "this folder"
+  return /^(?:true|false)$/i.test(name) ? `./${name}` : name
+}
+
+/** The manifests in this folder, sent one by one as the GitHub Action sends them; with --watch, each one watched under the folder's name. */
 async function localCheck(ctx, noOrigin) {
   const { io, p, check } = ctx
   if (!ctx.key) {
@@ -246,6 +270,7 @@ async function localCheck(ctx, noOrigin) {
   }
   const files = []
   const notes = []
+  const watch = ctx.args.flags.watch ? watchName(io) : null
   let last = null
   if (found.length > ctx.maxFiles) {
     notes.push(`${text.plural(found.length, "manifest")} found, the first ${ctx.maxFiles} checked (each one costs credits). Raise it with --max-files.`)
@@ -255,7 +280,7 @@ async function localCheck(ctx, noOrigin) {
     if (content === null) notes.push(`${file}: could not be read.`)
     else if (content.length > MAX_CHARACTERS) notes.push(`${file}: over ${text.num(MAX_CHARACTERS)} characters, not sent.`)
     else {
-      const answer = await checkAll(ctx, checkBody(file, content))
+      const answer = await checkAll(ctx, watch === null ? checkBody(file, content) : { ...checkBody(file, content), watch })
       if (answer.status === 200 && answer.json && Array.isArray(answer.json.findings)) files.push({ path: file, answer: answer.json })
       else if (answer.status === 401 || answer.status === 402) return refuse(ctx, answer)
       else {
@@ -318,11 +343,16 @@ function report(ctx, data) {
     lines.push(`  ${[c.bold("This folder"), `${text.plural(data.files.length, "manifest")} checked`, currentAsOf(io, answerAsOf(data.files.map((file) => file.answer)))].filter(Boolean).join("  ")}`)
     lines.push(`  ${counts}   ${text.num(checked)} checked`)
     for (const note of data.notes) notes.push(note)
+    // A file --watch could not watch says why, as the answer words it.
+    for (const file of data.files) {
+      if (isObject(file.answer.watch) && file.answer.watch.status !== "watching") notes.push(`${file.path}: ${file.answer.watch.message}`)
+    }
     for (const note of text.answerNotes(data.files.map((file) => file.answer))) notes.push(note)
     notes.push(`Only manifests were checked. Connect the repository to check its code too: ${APP}?utm_source=cli`)
   }
   lines.push("")
   for (const line of text.findingLines(items, all, c, more)) lines.push(line)
+  if (data.kind === "local") for (const line of watchingLines(ctx, data.files)) lines.push(line)
   for (const note of notes) lines.push(`  ${note}`)
   if (notes.length) lines.push("")
   for (const line of footer) lines.push(line)
@@ -334,6 +364,22 @@ function report(ctx, data) {
   lines.push("")
   io.out(lines.join("\n"))
   return exit
+}
+
+/** What --watch made of the manifests: how many are watched, until when and where new findings go. Nothing when none is watched. */
+function watchingLines(ctx, files) {
+  const watched = files.filter((file) => isObject(file.answer.watch) && file.answer.watch.status === "watching")
+  if (!watched.length) return []
+  const watches = watched.map((file) => file.answer.watch)
+  const until = watches.map((watch) => String(watch.expiresAt ?? "").slice(0, 10)).filter(Boolean).sort()[0]
+  const name = watches.find((watch) => typeof watch.name === "string" && watch.name)?.name
+  const webhooks = Math.max(0, ...watches.map((watch) => (isObject(watch.delivery) ? wholeNumber(watch.delivery.webhooks) ?? 0 : 0)))
+  const email = watches.some((watch) => isObject(watch.delivery) && watch.delivery.email === true)
+  const where = webhooks
+    ? `New findings go to ${text.plural(webhooks, "webhook endpoint")}${email ? " and by email" : ""}. List them: ${ctx.p} watches`
+    : email ? `New findings go by email. List them: ${ctx.p} watches`
+    : `Nothing tells you about new findings yet. Add a webhook: ${APP}/api-keys#webhooks`
+  return [`  ${"Watching".padEnd(14)}${text.plural(watched.length, "manifest")}${name ? ` of ${name}` : ""}${until ? ` until ${until}` : ""}`, `${" ".repeat(16)}${where}`, ""]
 }
 
 /** The oldest `coverage.asOf` of the answers: what they are all current as of. */
@@ -363,6 +409,18 @@ async function repoCommand(ctx) {
   if (!fromTree && args.flags.local) {
     io.err("--local checks the folder you are in, so it takes no repository name.\n")
     return 2
+  }
+  // A watch keeps what the manifests here hold, read from this folder: a connected repository is watched already, by connecting it.
+  if (args.flags.watch) {
+    if (!fromTree) {
+      io.err("--watch watches the manifests in the folder you are in, so it takes no repository name.\n")
+      return 2
+    }
+    if (!ctx.key) {
+      io.err(`Watching needs a key. Sign in first: ${p} login\n`)
+      return check ? 2 : 1
+    }
+    return localCheck(ctx, false)
   }
   // In CI with a key, and whenever --local asks: the checkout itself, not the default branch on GitHub.
   if (fromTree && (args.flags.local || (check && ctx.key))) return localCheck(ctx, false)
@@ -433,7 +491,9 @@ async function changedCommand(ctx) {
   }
   const ecosystem = args.flags.ecosystem ?? "npm"
   const since = args.flags.since ?? null
-  const answer = await call(ctx, "GET", "/v1/changes", { query: { package: name, ecosystem, since, limit: args.flags.all ? 200 : 20 }, key: ctx.key })
+  const to = args.flags.to ?? null
+  const all = Boolean(args.flags.all)
+  const answer = await call(ctx, "GET", "/v1/changes", { query: { package: name, ecosystem, since, to, limit: all ? 200 : 20 }, key: ctx.key })
   if (answer.status !== 200 || !answer.json || !Array.isArray(answer.json.changes)) return refuse(ctx, answer)
   if (args.flags.json) {
     io.out(`${JSON.stringify(answer.json, null, 2)}\n`)
@@ -443,14 +503,24 @@ async function changedCommand(ctx) {
   const found = isObject(answer.json.package) ? answer.json.package : {}
   const head = [c.bold(String(found.name ?? name)), String(found.ecosystem ?? ecosystem), found.latest ? `latest ${found.latest}` : ""]
   const lines = ["", `  ${head.filter(Boolean).join("  ")}`]
-  lines.push(`  ${changes.length ? text.plural(changes.length, "change") : "No changes recorded"}${since ? ` since ${since}` : ""}${answer.json.nextCursor ? ", and more" : ""}`, "")
+  const range = since && to ? ` from ${since} to ${to}` : since ? ` since ${since}` : ""
+  lines.push(`  ${changes.length ? text.plural(changes.length, "change") : "No changes recorded"}${range}${answer.json.nextCursor ? ", and more" : ""}`, "")
   for (const line of text.changeLines(changes, c)) lines.push(line)
   if (changes.length) lines.push("")
+  // A move (--to) lists its releases and how each was read: what Since has and has not read, never a verdict on the move.
+  const releases = to && isObject(answer.json.releases) ? answer.json.releases : null
+  const moved = releases ? text.releaseLines(releases, since, to, all) : null
+  if (moved) lines.push(...moved.lines, "")
   const notes = []
-  if (answer.json.reading) notes.push("Since is reading newer releases of this package now. Run this again in a few minutes to include them.")
+  if (answer.json.reading) {
+    notes.push(`Since is reading ${to ? "some of these releases" : "newer releases of this package"} now. Run this again in a few minutes to include them.`)
+  }
   for (const note of notes) lines.push(`  ${note}`)
   if (notes.length) lines.push("")
-  if (answer.json.nextCursor) lines.push(`  ${"More".padEnd(14)}${p} changed ${name}${since ? ` --since ${since}` : ""}${ecosystem !== "npm" ? ` --ecosystem ${ecosystem}` : ""} --all`, "")
+  if (answer.json.nextCursor || (moved && moved.more)) {
+    const flags = `${since ? ` --since ${since}` : ""}${to ? ` --to ${to}` : ""}${ecosystem !== "npm" ? ` --ecosystem ${ecosystem}` : ""}`
+    lines.push(`  ${"More".padEnd(14)}${p} changed ${name}${flags} --all`, "")
+  }
   io.out(lines.join("\n"))
   return 0
 }
@@ -496,6 +566,54 @@ async function loginCommand(ctx) {
   return 1
 }
 
+/** How a watch arrived, as the list says it: the API, the CLI, or MCP, with the client that made it when known. */
+const doorWords = (watch) => (watch.door === "cli" ? "CLI" : `${String(watch.door ?? "api").toUpperCase()}${typeof watch.client === "string" && watch.client ? ` (${watch.client})` : ""}`)
+
+/** `since watches`: what this workspace watches, and how to stop each. */
+async function watchesCommand(ctx) {
+  const { io, args, p, c } = ctx
+  if (!ctx.key) {
+    io.err(`${p} watches needs a key. Sign in first: ${p} login\n`)
+    return 1
+  }
+  const answer = await call(ctx, "GET", "/v1/watches", { key: ctx.key })
+  if (answer.status !== 200 || !answer.json || !Array.isArray(answer.json.watches)) return refuse(ctx, answer)
+  if (args.flags.json) {
+    io.out(`${JSON.stringify(answer.json, null, 2)}\n`)
+    return 0
+  }
+  const { watches } = answer.json
+  const ended = Array.isArray(answer.json.ended) ? answer.json.ended : []
+  const indent = " ".repeat(16)
+  const lines = ["", `  ${c.bold("Watches")}  ${wholeNumber(answer.json.active) ?? watches.length} of ${wholeNumber(answer.json.limit) ?? 100}`, ""]
+  if (!watches.length) lines.push(`  Nothing watched yet. Add --watch to ${p} check, or watch: true to a check.`, "")
+  for (const watch of watches) {
+    lines.push(`  ${String(watch.subject)}${typeof watch.name === "string" && watch.name ? `  ${watch.name}` : ""}`)
+    lines.push(`${indent}${[String(watch.input), doorWords(watch), `${text.num(wholeNumber(watch.watchedCount) ?? 0)} watched`, `until ${String(watch.expiresAt ?? "").slice(0, 10)}`].join("  ")}`)
+    const sent = Array.isArray(watch.sent) ? watch.sent : []
+    const count = wholeNumber(watch.sentCount) ?? sent.length
+    lines.push(`${indent}${count && sent.length ? `Found ${text.num(count)}: ${String(sent[0].headline)}` : "Nothing new found yet"}`)
+    lines.push(`${indent}Remove: ${p} watches remove ${String(watch.id)}`, "")
+  }
+  if (ended.length) lines.push(`  Ended in the last 30 days: ${text.num(ended.length)}. What each kept is deleted 30 days after it ended.`, "")
+  io.out(lines.join("\n"))
+  return 0
+}
+
+/** `since watches remove <id>`: stop watching one. */
+async function removeWatchCommand(ctx, id) {
+  const { io } = ctx
+  if (!ctx.key) {
+    io.err(`${ctx.p} watches needs a key. Sign in first: ${ctx.p} login\n`)
+    return 1
+  }
+  const answer = await call(ctx, "DELETE", `/v1/watches/${encodeURIComponent(id)}`, { key: ctx.key })
+  if (answer.status !== 200 || !answer.json || typeof answer.json.subject !== "string") return refuse(ctx, answer)
+  const { subject, name } = answer.json
+  io.out(`Stopped watching ${subject}${typeof name === "string" && name ? ` (${name})` : ""}. What it kept is deleted on ${String(answer.json.deletedForGoodAt ?? "").slice(0, 10)}.\n`)
+  return 0
+}
+
 function logoutCommand(ctx) {
   const { io } = ctx
   const removed = io.remove(credentialsPath(io))
@@ -523,6 +641,10 @@ export async function run(argv, io) {
   const words = args.positional
   if (command === "changed") {
     if (words.length !== 1) return usage(words.length ? `Too many words: ${words[1]}` : `${p} changed needs a package name, as ${p} changed react`)
+    if (args.flags.to !== undefined && args.flags.since === undefined) return usage("--to needs --since, the version you move from.")
+  } else if (command === "watches") {
+    if (words.length && words[0] !== "remove") return usage(`Unknown command: watches ${words[0]}`)
+    if (words[0] === "remove" && words.length !== 2) return usage(words.length > 2 ? `Too many words: ${words[2]}` : `${p} watches remove needs a watch's id, as ${p} watches lists them.`)
   } else if (command === null || command === "check") {
     if (words.length > 1) return usage(`Too many words: ${words[1]}`)
     if (command === null && words.length === 1 && !words[0].includes("/")) return usage(`Unknown command: ${words[0]}`)
@@ -549,5 +671,6 @@ export async function run(argv, io) {
   if (command === "init") return init(io, p, { dryRun: Boolean(args.flags["dry-run"]), yes: Boolean(args.flags.yes) })
   if (command === "login") return loginCommand(ctx)
   if (command === "logout") return logoutCommand(ctx)
+  if (command === "watches") return words.length ? removeWatchCommand(ctx, words[1]) : watchesCommand(ctx)
   return repoCommand(ctx)
 }

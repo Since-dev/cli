@@ -1,0 +1,15 @@
+$ since check --watch
+
+  This folder  1 manifest checked
+  No findings   1 checked
+
+  Watching      1 manifest of ./false until 2027-02-19
+                Nothing tells you about new findings yet. Add a webhook: https://app.since.dev/api-keys#webhooks
+
+  Not fully checked yet: dependencies. --json says why.
+  Only manifests were checked. Connect the repository to check its code too: https://app.since.dev?utm_source=cli
+
+  Passed        nothing at high or above
+--- log
+POST /v1/check key {"detail":"summary","manifest":{"content":"{\n  \"name\": \"shop\",\n  \"dependencies\": {\n    \"left-pad\": \"1.3.0\"\n  }\n}\n","path":"package.json"},"watch":"./false"}
+--- exit 0

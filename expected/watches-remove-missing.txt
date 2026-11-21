@@ -1,0 +1,6 @@
+$ since watches remove 6f1c2d3e-0000-4000-8000-00000000ffff
+--- stderr
+No watch with that id in this workspace.
+--- log
+DELETE /v1/watches/6f1c2d3e-0000-4000-8000-00000000ffff key
+--- exit 1

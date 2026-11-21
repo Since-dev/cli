@@ -1,0 +1,21 @@
+{
+  "args": [
+    "watches"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-21T15:00:00.000Z",
+  "http": [
+    {
+      "request": "GET /v1/watches",
+      "status": 200,
+      "body": {
+        "watches": [],
+        "active": 0,
+        "limit": 100,
+        "ended": []
+      }
+    }
+  ]
+}

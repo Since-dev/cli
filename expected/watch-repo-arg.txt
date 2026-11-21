@@ -1,0 +1,4 @@
+$ since --watch acme/shop
+--- stderr
+--watch watches the manifests in the folder you are in, so it takes no repository name.
+--- exit 2

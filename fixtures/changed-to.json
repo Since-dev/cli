@@ -1,0 +1,172 @@
+{
+  "args": [
+    "changed",
+    "express",
+    "--since",
+    "4.19.2",
+    "--to",
+    "4.21.2"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-21T15:00:00.000Z",
+  "http": [
+    {
+      "request": "GET /v1/changes",
+      "status": 200,
+      "body": {
+        "query": {
+          "package": {
+            "ecosystem": "npm",
+            "name": "express",
+            "purl": "pkg:npm/express",
+            "known": true
+          },
+          "since": {
+            "version": "4.19.2"
+          },
+          "to": {
+            "version": "4.21.2"
+          }
+        },
+        "package": {
+          "ecosystem": "npm",
+          "name": "express",
+          "purl": "pkg:npm/express",
+          "status": "active",
+          "latest": "5.3.0",
+          "since": "4.19.2",
+          "releasesBehind": 14
+        },
+        "reading": {
+          "retryAfterSec": 60,
+          "releases": 1
+        },
+        "releases": {
+          "releases": 4,
+          "full": 2,
+          "partial": 1,
+          "unreadable": 0,
+          "failed": 0,
+          "reading": 1,
+          "list": [
+            {
+              "version": "4.20.0",
+              "date": "2024-09-10",
+              "read": "full"
+            },
+            {
+              "version": "4.21.0",
+              "date": "2024-10-08",
+              "read": "partial",
+              "notRead": [
+                "part of the package's code",
+                "a migration guide"
+              ]
+            },
+            {
+              "version": "4.21.1",
+              "date": "2024-10-08",
+              "read": "full"
+            },
+            {
+              "version": "4.21.2",
+              "date": null,
+              "read": "reading"
+            }
+          ]
+        },
+        "changes": [
+          {
+            "id": "0f3b9b56-6c1e-4f4e-9d3a-6f2a1c9e4b10",
+            "source": "catalog",
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "kind": "deprecated",
+            "severity": "low",
+            "title": "res.clearCookie: the maxAge and expires options are deprecated in express 4.21.0",
+            "summary": "res.clearCookie ignores maxAge and expires in express 5. Stop passing them.",
+            "replacement": null,
+            "reroutedTo": null,
+            "replacementNotes": [],
+            "platform": null,
+            "symbol": "res.clearCookie",
+            "introducedIn": "4.21.0",
+            "removedIn": null,
+            "affectedRanges": [],
+            "effectiveDate": null,
+            "dates": {},
+            "evidence": [
+              {
+                "url": "https://github.com/expressjs/express/releases/tag/4.21.0",
+                "quote": "Deprecate res.clearCookie accepting options.maxAge and options.expires",
+                "sourceKind": "release_notes",
+                "license": null
+              }
+            ],
+            "sources": [
+              "npm"
+            ],
+            "detectedAt": "2026-11-21T14:10:55.465Z",
+            "occurredAt": "2024-10-08T16:37:03.000Z",
+            "publishedAt": null,
+            "changedAt": "2024-10-08T16:37:03.000Z"
+          },
+          {
+            "id": "7c1d2e3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f",
+            "source": "catalog",
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:express",
+              "provider": "npm",
+              "name": "express",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/express"
+            },
+            "kind": "behavior_changed",
+            "severity": "medium",
+            "title": "express.urlencoded limits nested objects to a depth of 32 by default in express 4.20.0",
+            "summary": "A body nested deeper than 32 levels is refused with a 400. Set the depth option to keep accepting it.",
+            "replacement": null,
+            "reroutedTo": null,
+            "replacementNotes": [],
+            "platform": null,
+            "symbol": "express.urlencoded",
+            "introducedIn": "4.20.0",
+            "removedIn": null,
+            "affectedRanges": [],
+            "effectiveDate": null,
+            "dates": {},
+            "evidence": [
+              {
+                "url": "https://github.com/expressjs/express/releases/tag/4.20.0",
+                "quote": "deps: body-parser@1.20.3",
+                "sourceKind": "release_notes",
+                "license": null
+              }
+            ],
+            "sources": [
+              "npm"
+            ],
+            "detectedAt": "2026-11-21T14:10:55.465Z",
+            "occurredAt": "2024-09-10T20:57:42.000Z",
+            "publishedAt": null,
+            "changedAt": "2024-09-10T20:57:42.000Z"
+          }
+        ],
+        "nextCursor": null,
+        "coverage": {
+          "sources": [],
+          "missing": []
+        }
+      }
+    }
+  ]
+}

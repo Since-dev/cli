@@ -1,0 +1,5 @@
+$ since watches remove 0b7e5a90-0000-4000-8000-000000000002
+Stopped watching services/worker/pyproject.toml (acme/shop). What it kept is deleted on 2026-12-21.
+--- log
+DELETE /v1/watches/0b7e5a90-0000-4000-8000-000000000002 key
+--- exit 0

@@ -55,9 +55,11 @@ To keep it, `npm install -g since-dev` or `pip install since-dev` gives you the 
 | `since <owner/repo>` | Checks any public GitHub repository. A GitHub URL works too. |
 | `since init` | Sets up your coding agent to check before it writes. See below. |
 | `since calendar` | What ends in the next 30 days: model retirements, runtime end of life, API removals. `--within 90d`, `--provider openai`. |
-| `since changed <package>` | Breaking changes and deprecations of a package. `--since 4.19.2` lists only what changed after that version, `--ecosystem pypi` picks the registry. Needs a key. |
+| `since changed <package>` | Breaking changes and deprecations of a package. `--since 4.19.2` lists only what changed after that version, and `--to 4.21.2` only up to the version you move to, with each release in between and how fully Since read it. `--ecosystem pypi` picks the registry. Needs a key. |
 | `since check` | The same check for CI: exit 1 when a finding fails. See below. |
 | `since login`, `since logout` | Sign in for private repositories, and remove the stored key. |
+| `since watches` | What your workspace watches: each watched check, what it holds, until when, and the new findings it has sent. Needs a key. |
+| `since watches remove <id>` | Stop watching one. It is deleted 30 days later, and until then it can be restored in the app. |
 
 `--all` shows every finding (10 by default), `--json` prints the answer as JSON, `--within 30d` keeps only dates within that many days.
 
@@ -96,6 +98,7 @@ It only ever adds its own: the `since` entry in the three config files, its two 
 - **A public GitHub repository:** only its name. Since reads the default branch from GitHub, so uncommitted work and other branches are not in the answer. It is free: 25 scans a day per address, and a scan is kept for an hour.
 - **A private repository, after `since login`:** if the repository is connected to your Since workspace and your plan includes it, the answer comes from there. Otherwise the CLI sends the manifests it finds in the folder (`package.json`, `requirements*.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `pom.xml`, `build.gradle`, `*.csproj`), 10 at most unless you raise `--max-files`. Source files are never sent. Each manifest is one call to the API, which uses credits.
 - `--local` checks the manifests in the folder even when the repository is public, for work you have not pushed.
+- `--watch` (with `since` or `since check`) checks the manifests in the folder and keeps watching them for 90 days: Since keeps the packages, versions and runtime versions each one names, with the file and line, never the file itself, and tells your workspace's webhooks when something new reaches them. Each watch is named after the repository (`owner/repo` from the `origin` remote, else the folder's name), so a `package.json` in two projects is watched apart. Running it again renews the watches. Watching is free and needs a key.
 
 ## In CI
 
