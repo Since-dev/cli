@@ -323,6 +323,20 @@ def local_check(ctx, no_origin):
     return report(ctx, {"kind": "local", "files": files, "notes": notes})
 
 
+def answer_as_of(answers):
+    """The oldest `coverage.asOf` of the answers: what they are all current as of."""
+    known = sorted(answer["coverage"]["asOf"] for answer in answers if isinstance(answer, dict) and isinstance(answer.get("coverage"), dict)
+                   and isinstance(answer["coverage"].get("asOf"), str) and answer["coverage"]["asOf"])
+    return known[0] if known else None
+
+
+def current_as_of(io, at):
+    """"current as of 22 min ago": how far the sources an answer read had been read, when it says."""
+    parsed = parse_time(at if isinstance(at, str) else "")
+    ago = text.ago(None if parsed is None else io.now() - parsed)
+    return "current as of %s" % ago if ago else ""
+
+
 def parse_time(value):
     """Milliseconds since 1970 from an ISO time, or None."""
     try:
@@ -368,7 +382,7 @@ def report(ctx, data):
         branch = str(first(repository.get("defaultBranch"), ""))
         parsed = parse_time(first(result.get("scannedAt"), ""))
         scanned = text.ago(None if parsed is None else io.now() - parsed)
-        head = [c.bold(str(repository.get("fullName"))), "%s@%s" % (branch, sha) if sha else branch, "scanned %s" % scanned if scanned else ""]
+        head = [c.bold(str(repository.get("fullName"))), "%s@%s" % (branch, sha) if sha else branch, "scanned %s" % scanned if scanned else "", current_as_of(io, result.get("asOf"))]
         lines.append("  %s" % "  ".join(part for part in head if part))
         dependencies = first(whole_number(summary.get("dependencies")), 0)
         files = first(whole_number(summary.get("files")), 0)
@@ -380,13 +394,14 @@ def report(ctx, data):
             notes.append(str(note))
         footer.append("  %s%s/scan/%s?utm_source=cli" % ("Full report".ljust(14), SITE, repository.get("fullName")))
     elif data["kind"] == "repo":
-        head = [c.bold(str(data["repo"].get("fullName"))), str(first(data["repo"].get("defaultBranch"), "")), "connected repository"]
+        head = [c.bold(str(data["repo"].get("fullName"))), str(first(data["repo"].get("defaultBranch"), "")), "connected repository", current_as_of(io, answer_as_of([data["answer"]]))]
         lines.append("  %s" % "  ".join(part for part in head if part))
         lines.append("  %s   %s checked" % (counts, text.num(first(whole_number(data["answer"].get("checkedCount")), 0))))
         notes.extend(text.answer_notes([data["answer"]]))
     else:
         checked = sum(first(whole_number(file["answer"].get("checkedCount")), 0) for file in data["files"])
-        lines.append("  %s  %s checked" % (c.bold("This folder"), text.plural(len(data["files"]), "manifest")))
+        head = [c.bold("This folder"), "%s checked" % text.plural(len(data["files"]), "manifest"), current_as_of(io, answer_as_of([file["answer"] for file in data["files"]]))]
+        lines.append("  %s" % "  ".join(part for part in head if part))
         lines.append("  %s   %s checked" % (counts, text.num(checked)))
         notes.extend(data["notes"])
         notes.extend(text.answer_notes([file["answer"] for file in data["files"]]))

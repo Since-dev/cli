@@ -8,7 +8,7 @@ import { init } from "./init.mjs"
 import { MAX_CHARACTERS, checkBody, findManifests, parseRepo } from "./local.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.2.0"
+export const VERSION = "0.2.1"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
@@ -300,7 +300,7 @@ function report(ctx, data) {
     const branch = String(repository.defaultBranch ?? "")
     const parsed = Date.parse(String(result.scannedAt ?? ""))
     const scanned = text.ago(Number.isFinite(parsed) ? io.now() - parsed : null)
-    const head = [c.bold(String(repository.fullName)), sha ? `${branch}@${sha}` : branch, scanned ? `scanned ${scanned}` : ""]
+    const head = [c.bold(String(repository.fullName)), sha ? `${branch}@${sha}` : branch, scanned ? `scanned ${scanned}` : "", currentAsOf(io, result.asOf)]
     lines.push(`  ${head.filter(Boolean).join("  ")}`)
     const dependencies = wholeNumber(summary.dependencies) ?? 0
     const files = wholeNumber(summary.files) ?? 0
@@ -310,12 +310,12 @@ function report(ctx, data) {
     for (const note of coverage) notes.push(String(note))
     footer.push(`  ${"Full report".padEnd(14)}${SITE}/scan/${repository.fullName}?utm_source=cli`)
   } else if (data.kind === "repo") {
-    lines.push(`  ${[c.bold(String(data.repo.fullName)), String(data.repo.defaultBranch ?? ""), "connected repository"].filter(Boolean).join("  ")}`)
+    lines.push(`  ${[c.bold(String(data.repo.fullName)), String(data.repo.defaultBranch ?? ""), "connected repository", currentAsOf(io, answerAsOf([data.answer]))].filter(Boolean).join("  ")}`)
     lines.push(`  ${counts}   ${text.num(wholeNumber(data.answer.checkedCount) ?? 0)} checked`)
     for (const note of text.answerNotes([data.answer])) notes.push(note)
   } else {
     const checked = data.files.reduce((sum, file) => sum + (wholeNumber(file.answer.checkedCount) ?? 0), 0)
-    lines.push(`  ${c.bold("This folder")}  ${text.plural(data.files.length, "manifest")} checked`)
+    lines.push(`  ${[c.bold("This folder"), `${text.plural(data.files.length, "manifest")} checked`, currentAsOf(io, answerAsOf(data.files.map((file) => file.answer)))].filter(Boolean).join("  ")}`)
     lines.push(`  ${counts}   ${text.num(checked)} checked`)
     for (const note of data.notes) notes.push(note)
     for (const note of text.answerNotes(data.files.map((file) => file.answer))) notes.push(note)
@@ -334,6 +334,19 @@ function report(ctx, data) {
   lines.push("")
   io.out(lines.join("\n"))
   return exit
+}
+
+/** The oldest `coverage.asOf` of the answers: what they are all current as of. */
+function answerAsOf(answers) {
+  const known = answers.map((answer) => (isObject(answer) && isObject(answer.coverage) ? answer.coverage.asOf : null)).filter((at) => typeof at === "string" && at).sort()
+  return known[0] ?? null
+}
+
+/** "current as of 22 min ago": how far the sources an answer read had been read, when it says. */
+function currentAsOf(io, at) {
+  const parsed = Date.parse(String(at ?? ""))
+  const ago = text.ago(Number.isFinite(parsed) ? io.now() - parsed : null)
+  return ago ? `current as of ${ago}` : ""
 }
 
 /** `since`, `since <owner/repo>` and `since check`: find the repository, then the cheapest way to read it. */

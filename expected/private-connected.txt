@@ -1,6 +1,6 @@
 $ since
 
-  Acme/Shop  main  connected repository
+  Acme/Shop  main  connected repository  current as of 2 min ago
   1 with a date   1 undated   214 checked
 
   20 days   claude-sonnet-4-5-20250929 on Claude API: retirement 2026-11-30

@@ -1,6 +1,6 @@
 $ since check
 
-  plasma-umass/scalene  master@d5b59af  scanned 20 min ago
+  plasma-umass/scalene  master@d5b59af  scanned 20 min ago  current as of 23 min ago
   5 with a date   5 undated   2 to review   247 dependencies and 377 files read
   Read from GitHub (master), not your working tree.
 
