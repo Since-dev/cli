@@ -1,0 +1,120 @@
+{
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "origin": "git@github.com:acme/shop.git",
+  "now": "2026-11-10T15:00:00.000Z",
+  "args": [
+    "check",
+    "--max-files",
+    "60"
+  ],
+  "files": {
+    "packages/p00/package.json": "{\"name\": \"p00\", \"dependencies\": {}}\n",
+    "packages/p01/package.json": "{\"name\": \"p01\", \"dependencies\": {}}\n",
+    "packages/p02/package.json": "{\"name\": \"p02\", \"dependencies\": {}}\n",
+    "packages/p03/package.json": "{\"name\": \"p03\", \"dependencies\": {}}\n",
+    "packages/p04/package.json": "{\"name\": \"p04\", \"dependencies\": {}}\n",
+    "packages/p05/package.json": "{\"name\": \"p05\", \"dependencies\": {}}\n",
+    "packages/p06/package.json": "{\"name\": \"p06\", \"dependencies\": {}}\n",
+    "packages/p07/package.json": "{\"name\": \"p07\", \"dependencies\": {}}\n",
+    "packages/p08/package.json": "{\"name\": \"p08\", \"dependencies\": {}}\n",
+    "packages/p09/package.json": "{\"name\": \"p09\", \"dependencies\": {}}\n",
+    "packages/p10/package.json": "{\"name\": \"p10\", \"dependencies\": {}}\n",
+    "packages/p11/package.json": "{\"name\": \"p11\", \"dependencies\": {}}\n",
+    "packages/p12/package.json": "{\"name\": \"p12\", \"dependencies\": {}}\n",
+    "packages/p13/package.json": "{\"name\": \"p13\", \"dependencies\": {}}\n",
+    "packages/p14/package.json": "{\"name\": \"p14\", \"dependencies\": {}}\n",
+    "packages/p15/package.json": "{\"name\": \"p15\", \"dependencies\": {}}\n",
+    "packages/p16/package.json": "{\"name\": \"p16\", \"dependencies\": {}}\n",
+    "packages/p17/package.json": "{\"name\": \"p17\", \"dependencies\": {}}\n",
+    "packages/p18/package.json": "{\"name\": \"p18\", \"dependencies\": {}}\n",
+    "packages/p19/package.json": "{\"name\": \"p19\", \"dependencies\": {}}\n",
+    "packages/p20/package.json": "{\"name\": \"p20\", \"dependencies\": {}}\n",
+    "packages/p21/package.json": "{\"name\": \"p21\", \"dependencies\": {}}\n",
+    "packages/p22/package.json": "{\"name\": \"p22\", \"dependencies\": {}}\n",
+    "packages/p23/package.json": "{\"name\": \"p23\", \"dependencies\": {}}\n",
+    "packages/p24/package.json": "{\"name\": \"p24\", \"dependencies\": {}}\n",
+    "packages/p25/package.json": "{\"name\": \"p25\", \"dependencies\": {}}\n",
+    "packages/p26/package.json": "{\"name\": \"p26\", \"dependencies\": {}}\n",
+    "packages/p27/package.json": "{\"name\": \"p27\", \"dependencies\": {}}\n",
+    "packages/p28/package.json": "{\"name\": \"p28\", \"dependencies\": {}}\n",
+    "packages/p29/package.json": "{\"name\": \"p29\", \"dependencies\": {}}\n",
+    "packages/p30/package.json": "{\"name\": \"p30\", \"dependencies\": {}}\n",
+    "packages/p31/package.json": "{\"name\": \"p31\", \"dependencies\": {}}\n",
+    "packages/p32/package.json": "{\"name\": \"p32\", \"dependencies\": {}}\n",
+    "packages/p33/package.json": "{\"name\": \"p33\", \"dependencies\": {}}\n",
+    "packages/p34/package.json": "{\"name\": \"p34\", \"dependencies\": {}}\n",
+    "packages/p35/package.json": "{\"name\": \"p35\", \"dependencies\": {}}\n",
+    "packages/p36/package.json": "{\"name\": \"p36\", \"dependencies\": {}}\n",
+    "packages/p37/package.json": "{\"name\": \"p37\", \"dependencies\": {}}\n",
+    "packages/p38/package.json": "{\"name\": \"p38\", \"dependencies\": {}}\n",
+    "packages/p39/package.json": "{\"name\": \"p39\", \"dependencies\": {}}\n",
+    "packages/p40/package.json": "{\"name\": \"p40\", \"dependencies\": {}}\n",
+    "packages/p41/package.json": "{\"name\": \"p41\", \"dependencies\": {}}\n",
+    "packages/p42/package.json": "{\"name\": \"p42\", \"dependencies\": {}}\n",
+    "packages/p43/package.json": "{\"name\": \"p43\", \"dependencies\": {}}\n",
+    "packages/p44/package.json": "{\"name\": \"p44\", \"dependencies\": {}}\n",
+    "packages/p45/package.json": "{\"name\": \"p45\", \"dependencies\": {}}\n",
+    "packages/p46/package.json": "{\"name\": \"p46\", \"dependencies\": {}}\n",
+    "packages/p47/package.json": "{\"name\": \"p47\", \"dependencies\": {}}\n",
+    "packages/p48/package.json": "{\"name\": \"p48\", \"dependencies\": {}}\n",
+    "packages/p49/package.json": "{\"name\": \"p49\", \"dependencies\": {}}\n",
+    "packages/p50/package.json": "{\"name\": \"p50\", \"dependencies\": {}}\n",
+    "packages/p51/package.json": "{\"name\": \"p51\", \"dependencies\": {}}\n",
+    "packages/p52/package.json": "{\"name\": \"p52\", \"dependencies\": {}}\n",
+    "packages/p53/package.json": "{\"name\": \"p53\", \"dependencies\": {}}\n",
+    "packages/p54/package.json": "{\"name\": \"p54\", \"dependencies\": {}}\n",
+    "packages/p55/package.json": "{\"name\": \"p55\", \"dependencies\": {}}\n",
+    "packages/p56/package.json": "{\"name\": \"p56\", \"dependencies\": {}}\n",
+    "packages/p57/package.json": "{\"name\": \"p57\", \"dependencies\": {}}\n",
+    "packages/p58/package.json": "{\"name\": \"p58\", \"dependencies\": {}}\n",
+    "packages/p59/package.json": "{\"name\": \"p59\", \"dependencies\": {}}\n"
+  },
+  "http": [
+    {
+      "request": "POST /v1/check",
+      "status": 200,
+      "body": {
+        "input": "files",
+        "checked": [],
+        "findings": [],
+        "checkedCount": 0,
+        "totalFindings": 0,
+        "nextCursor": null,
+        "unresolved": [],
+        "truncated": false,
+        "coverage": {
+          "sources": [],
+          "missing": []
+        },
+        "draft": {
+          "files": 50,
+          "named": 50
+        }
+      }
+    },
+    {
+      "request": "POST /v1/check",
+      "status": 200,
+      "body": {
+        "input": "files",
+        "checked": [],
+        "findings": [],
+        "checkedCount": 0,
+        "totalFindings": 0,
+        "nextCursor": null,
+        "unresolved": [],
+        "truncated": false,
+        "coverage": {
+          "sources": [],
+          "missing": []
+        },
+        "draft": {
+          "files": 10,
+          "named": 10
+        }
+      }
+    }
+  ]
+}

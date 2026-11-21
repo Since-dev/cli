@@ -70,6 +70,53 @@ def find_manifests(io):
     return sorted(found, key=lambda file: (file.count("/"), file))
 
 
+MAX_SET_FILES = 50
+"""The most files one set holds: the API's own limits on `files`."""
+
+
+def is_lockfile(file):
+    """Whether a file is a lockfile, by its name."""
+    return file.split("/")[-1] in LOCKFILES
+
+
+def files_to_send(io, manifests):
+    """What a local check sends, in order: each manifest, nearest the top first, followed by the lockfiles in its own folder, so the
+    versions read are the installed ones. Each file once."""
+    out = []
+    seen = set()
+
+    def add(file):
+        if file not in seen:
+            seen.add(file)
+            out.append(file)
+
+    for manifest in manifests:
+        add(manifest)
+        folder = manifest.rsplit("/", 1)[0] if "/" in manifest else ""
+        names = sorted(entry["name"] for entry in io.list("%s/%s" % (io.cwd, folder) if folder else io.cwd) if not entry["dir"] and entry["name"] in LOCKFILES)
+        for name in names:
+            add("%s/%s" % (folder, name) if folder else name)
+    return out
+
+
+def file_sets(files):
+    """The files in sets the API takes, in order: up to 50 files and 500,000 characters each; a file that would overflow a set starts
+    the next."""
+    sets = []
+    current = []
+    size = 0
+    for file in files:
+        if current and (len(current) >= MAX_SET_FILES or size + len(file["content"]) > MAX_CHARACTERS):
+            sets.append(current)
+            current = []
+            size = 0
+        current.append(file)
+        size += len(file["content"])
+    if current:
+        sets.append(current)
+    return sets
+
+
 def check_body(file, content):
     name = file.split("/")[-1]
     return {"lockfile" if name in LOCKFILES else "manifest": {"path": file, "content": content}, "detail": "summary"}

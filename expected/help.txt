@@ -1,5 +1,5 @@
 $ since --help
-since-dev 0.3.0: what in this repository is about to stop working
+since-dev 0.4.0: what in this repository is about to stop working
 
 Usage
   npx since-dev                       check this repository (reads the origin remote)
@@ -27,7 +27,7 @@ Options
   --email <address>    login: the email to sign in with
   --dry-run            init: show what would be written
   --yes                init: write without asking
-  --max-files <n>      how many manifests to check (default 10)
+  --max-files <n>      how many manifests and lockfiles to send (default 50)
   --no-color           plain text
 
 Docs  https://since.dev/docs#cli

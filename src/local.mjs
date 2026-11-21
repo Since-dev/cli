@@ -60,6 +60,52 @@ export function findManifests(io) {
   return found.sort((a, b) => depth(a) - depth(b) || (a < b ? -1 : a > b ? 1 : 0))
 }
 
+/** The most files one set holds: the API's own limits on `files`. */
+export const MAX_SET_FILES = 50
+
+/** Whether a file is a lockfile, by its name. */
+export const isLockfile = (file) => LOCKFILES.has(file.split("/").pop())
+
+/**
+ * What a local check sends, in order: each manifest, nearest the top first, followed by the lockfiles in its own folder, so the versions
+ * read are the installed ones. Each file once.
+ */
+export function filesToSend(io, manifests) {
+  const out = []
+  const seen = new Set()
+  const add = (file) => {
+    if (!seen.has(file)) {
+      seen.add(file)
+      out.push(file)
+    }
+  }
+  for (const manifest of manifests) {
+    add(manifest)
+    const folder = manifest.includes("/") ? manifest.slice(0, manifest.lastIndexOf("/")) : ""
+    const names = io.list(folder ? `${io.cwd}/${folder}` : io.cwd).filter((entry) => !entry.dir && LOCKFILES.has(entry.name)).map((entry) => entry.name).sort()
+    for (const name of names) add(folder ? `${folder}/${name}` : name)
+  }
+  return out
+}
+
+/** The files in sets the API takes, in order: up to 50 files and 500,000 characters each; a file that would overflow a set starts the next. */
+export function fileSets(files) {
+  const sets = []
+  let current = []
+  let size = 0
+  for (const file of files) {
+    if (current.length && (current.length >= MAX_SET_FILES || size + file.content.length > MAX_CHARACTERS)) {
+      sets.push(current)
+      current = []
+      size = 0
+    }
+    current.push(file)
+    size += file.content.length
+  }
+  if (current.length) sets.push(current)
+  return sets
+}
+
 export function checkBody(file, content) {
   const name = file.split("/").pop()
   return { [LOCKFILES.has(name) ? "lockfile" : "manifest"]: { path: file, content }, detail: "summary" }

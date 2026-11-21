@@ -1,0 +1,64 @@
+{
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "origin": "git@github.com:acme/shop.git",
+  "now": "2026-11-10T15:00:00.000Z",
+  "args": [
+    "check"
+  ],
+  "files": {
+    "package.json": "{\n  \"name\": \"shop\",\n  \"dependencies\": {\n    \"lodash\": \"^4.17.0\"\n  }\n}\n",
+    "package-lock.json": "{\n  \"name\": \"shop\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\n    \"\": {\n      \"name\": \"shop\",\n      \"dependencies\": {\n        \"lodash\": \"^4.17.0\"\n      }\n    },\n    \"node_modules/lodash\": {\n      \"version\": \"4.17.20\"\n    }\n  }\n}\n"
+  },
+  "http": [
+    {
+      "request": "POST /v1/check",
+      "status": 200,
+      "body": {
+        "input": "files",
+        "checked": [],
+        "findings": [
+          {
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:lodash",
+              "provider": "npm",
+              "name": "lodash",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/lodash"
+            },
+            "version": "4.17.20",
+            "state": "affected",
+            "severity": "high",
+            "reason": "GHSA-35jh-r3h4-6jhm: Command Injection in lodash. Fixed in 4.17.21.",
+            "replacement": "4.17.21",
+            "effectiveDate": null,
+            "daysLeft": null,
+            "changeId": "11111111-1111-4111-8111-111111111111",
+            "where": [
+              {
+                "file": "package-lock.json",
+                "line": 7
+              }
+            ],
+            "source": "https://github.com/advisories/GHSA-35jh-r3h4-6jhm"
+          }
+        ],
+        "checkedCount": 1,
+        "totalFindings": 1,
+        "nextCursor": null,
+        "unresolved": [],
+        "truncated": false,
+        "coverage": {
+          "sources": [],
+          "missing": []
+        },
+        "draft": {
+          "files": 2,
+          "named": 2
+        }
+      }
+    }
+  ]
+}

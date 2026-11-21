@@ -1,0 +1,15 @@
+$ since check
+
+  This folder  2 files checked
+  1 undated   1 checked
+
+  high      GHSA-35jh-r3h4-6jhm: Command Injection in lodash. Fixed in 4.17.21.
+            package-lock.json:7   use 4.17.21
+            https://github.com/advisories/GHSA-35jh-r3h4-6jhm
+
+  Only manifests and lockfiles were checked. Connect the repository to check its code too: https://app.since.dev?utm_source=cli
+
+  Failed        1 finding at high or above
+--- log
+POST /v1/check key {"detail":"summary","files":[{"content":"{\n  \"name\": \"shop\",\n  \"dependencies\": {\n    \"lodash\": \"^4.17.0\"\n  }\n}\n","path":"package.json"},{"content":"{\n  \"name\": \"shop\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\n    \"\": {\n      \"name\": \"shop\",\n      \"dependencies\": {\n        \"lodash\": \"^4.17.0\"\n      }\n    },\n    \"node_modules/lodash\": {\n      \"version\": \"4.17.20\"\n    }\n  }\n}\n","path":"package-lock.json"}]}
+--- exit 1

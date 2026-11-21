@@ -13,7 +13,7 @@ from urllib.parse import quote
 from . import __version__ as VERSION
 from . import render as text
 from .init import dumps, init, loads
-from .local import MAX_CHARACTERS, check_body, find_manifests, parse_repo
+from .local import MAX_CHARACTERS, check_body, file_sets, files_to_send, find_manifests, is_lockfile, parse_repo
 
 DEFAULT_API = "https://api.since.dev"
 SITE = "https://since.dev"
@@ -90,7 +90,7 @@ def help_text(p):
         ["--email <address>", "login: the email to sign in with"],
         ["--dry-run", "init: show what would be written"],
         ["--yes", "init: write without asking"],
-        ["--max-files <n>", "how many manifests to check (default 10)"],
+        ["--max-files <n>", "how many manifests and lockfiles to send (default 50)"],
         ["--no-color", "plain text"],
     ]
     width = max(len(p) + len(words) for words, _ in usage) + 3
@@ -313,7 +313,9 @@ def watch_name(io):
 
 
 def local_check(ctx, no_origin):
-    """The manifests in this folder, sent one by one as the GitHub Action sends them; with --watch, each one watched under the folder's name."""
+    """The manifests in this folder, each with the lockfiles beside it, sent together as sets of files, so the versions read are the
+    installed ones and a range with no lockfile is read as a fresh install would land. With --watch, each manifest is sent and watched on
+    its own, under the folder's name: a watch keeps one file."""
     io, p, check = ctx["io"], ctx["p"], ctx["check"]
     if not ctx["key"]:
         if no_origin:
@@ -325,9 +327,11 @@ def local_check(ctx, no_origin):
     if not found:
         io.err("No manifests in this folder (package.json, pyproject.toml, go.mod and the like).\n")
         return 2 if check else 1
+    if not ctx["args"]["flags"].get("watch"):
+        return local_sets(ctx, found)
     files = []
     notes = []
-    watch = watch_name(io) if ctx["args"]["flags"].get("watch") else None
+    watch = watch_name(io)
     last = None
     if len(found) > ctx["max_files"]:
         notes.append("%s found, the first %d checked (each one costs credits). Raise it with --max-files." % (text.plural(len(found), "manifest"), ctx["max_files"]))
@@ -338,9 +342,7 @@ def local_check(ctx, no_origin):
         elif len(content) > MAX_CHARACTERS:
             notes.append("%s: over %s characters, not sent." % (file, text.num(MAX_CHARACTERS)))
         else:
-            body = check_body(file, content)
-            if watch is not None:
-                body = dict(body, watch=watch)
+            body = dict(check_body(file, content), watch=watch)
             answer = check_all(ctx, body)
             if _has_findings(answer):
                 files.append({"path": file, "answer": answer["json"]})
@@ -353,6 +355,40 @@ def local_check(ctx, no_origin):
     if not files and last is not None:
         return refuse(ctx, last)
     return report(ctx, {"kind": "local", "files": files, "notes": notes})
+
+
+def local_sets(ctx, found):
+    """The folder's manifests and the lockfiles beside them, in sets of files."""
+    io = ctx["io"]
+    listed = files_to_send(io, found)
+    notes = []
+    if len(listed) > ctx["max_files"]:
+        notes.append("%s found, the first %d sent. Raise it with --max-files." % (text.plural(len(listed), "file"), ctx["max_files"]))
+    entries = []
+    for path in listed[:ctx["max_files"]]:
+        content = io.read_file("%s/%s" % (io.cwd, path))
+        if content is None:
+            notes.append("%s: could not be read." % path)
+        elif len(content) > MAX_CHARACTERS:
+            notes.append("%s: over %s characters, not sent%s." % (path, text.num(MAX_CHARACTERS), "; its manifest was read as a fresh install would land" if is_lockfile(path) else ""))
+        else:
+            entries.append({"path": path, "content": content})
+    drafts = []
+    last = None
+    for group in file_sets(entries):
+        answer = check_all(ctx, {"files": group, "detail": "summary"})
+        paths = [file["path"] for file in group]
+        if _has_findings(answer):
+            drafts.append({"files": paths, "answer": answer["json"]})
+        elif answer["status"] in (401, 402):
+            return refuse(ctx, answer)
+        else:
+            last = answer
+            unreachable = answer["status"] == 0 or answer["status"] >= 500
+            notes.append("%s: %s" % (", ".join(paths), "Since could not be reached." if unreachable else first(message_of(answer), "Since answered %d." % answer["status"])))
+    if not drafts and last is not None:
+        return refuse(ctx, last)
+    return report(ctx, {"kind": "local", "files": [{"path": None, "answer": draft["answer"]} for draft in drafts], "drafts": drafts, "notes": notes})
 
 
 def answer_as_of(answers):
@@ -397,7 +433,7 @@ def report(ctx, data):
     failing = [item for item in items if text.fails(item, ctx["fail_on"])] if check else []
     exit_code = 1 if failing else 0
     if args["flags"].get("json"):
-        whole = data["result"] if data["kind"] == "scan" else data["answer"] if data["kind"] == "repo" else {"files": data["files"]}
+        whole = data["result"] if data["kind"] == "scan" else data["answer"] if data["kind"] == "repo" else {"drafts": data["drafts"]} if data.get("drafts") is not None else {"files": data["files"]}
         io.out("%s\n" % dumps(whole, 2))
         return exit_code
 
@@ -432,7 +468,9 @@ def report(ctx, data):
         notes.extend(text.answer_notes([data["answer"]]))
     else:
         checked = sum(first(whole_number(file["answer"].get("checkedCount")), 0) for file in data["files"])
-        head = [c.bold("This folder"), "%s checked" % text.plural(len(data["files"]), "manifest"), current_as_of(io, answer_as_of([file["answer"] for file in data["files"]]))]
+        # Sets of files count the files sent; watched manifests, the manifests.
+        sent = text.plural(sum(len(draft["files"]) for draft in data["drafts"]), "file") if data.get("drafts") is not None else text.plural(len(data["files"]), "manifest")
+        head = [c.bold("This folder"), "%s checked" % sent, current_as_of(io, answer_as_of([file["answer"] for file in data["files"]]))]
         lines.append("  %s" % "  ".join(part for part in head if part))
         lines.append("  %s   %s checked" % (counts, text.num(checked)))
         notes.extend(data["notes"])
@@ -442,7 +480,7 @@ def report(ctx, data):
             if isinstance(watch, dict) and watch.get("status") != "watching":
                 notes.append("%s: %s" % (file["path"], watch.get("message")))
         notes.extend(text.answer_notes([file["answer"] for file in data["files"]]))
-        notes.append("Only manifests were checked. Connect the repository to check its code too: %s?utm_source=cli" % APP)
+        notes.append("Only %s were checked. Connect the repository to check its code too: %s?utm_source=cli" % ("manifests and lockfiles" if data.get("drafts") is not None else "manifests", APP))
     lines.append("")
     lines.extend(text.finding_lines(items, show_all, c, more))
     if data["kind"] == "local":
@@ -775,7 +813,7 @@ def run(argv, io):
         if not re.fullmatch(r"[0-9]{1,4}d?", flags["within"]) or int(flags["within"].rstrip("d")) < 1:
             return usage("--within takes a number of days, as 30d.")
         within = int(flags["within"].rstrip("d"))
-    max_files = 10
+    max_files = 50
     if "max-files" in flags:
         if not re.fullmatch(r"[0-9]{1,3}", flags["max-files"]) or int(flags["max-files"]) < 1:
             return usage("--max-files takes a number from 1 to 999.")

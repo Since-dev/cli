@@ -5,10 +5,10 @@
 // reached (an outage never fails a build). Every other command: 1 when it could not finish, 2 for a usage error.
 
 import { init } from "./init.mjs"
-import { MAX_CHARACTERS, checkBody, findManifests, parseRepo } from "./local.mjs"
+import { MAX_CHARACTERS, checkBody, fileSets, filesToSend, findManifests, isLockfile, parseRepo } from "./local.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.3.0"
+export const VERSION = "0.4.0"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
@@ -73,7 +73,7 @@ function help(p) {
     ["--email <address>", "login: the email to sign in with"],
     ["--dry-run", "init: show what would be written"],
     ["--yes", "init: write without asking"],
-    ["--max-files <n>", "how many manifests to check (default 10)"],
+    ["--max-files <n>", "how many manifests and lockfiles to send (default 50)"],
     ["--no-color", "plain text"],
   ]
   const width = Math.max(...usage.map(([words]) => p.length + words.length)) + 3
@@ -252,7 +252,11 @@ export function watchName(io) {
   return /^(?:true|false)$/i.test(name) ? `./${name}` : name
 }
 
-/** The manifests in this folder, sent one by one as the GitHub Action sends them; with --watch, each one watched under the folder's name. */
+/**
+ * The manifests in this folder, each with the lockfiles beside it, sent together as sets of files, so the versions read are the installed
+ * ones and a range with no lockfile is read as a fresh install would land. With --watch, each manifest is sent and watched on its own,
+ * under the folder's name: a watch keeps one file.
+ */
 async function localCheck(ctx, noOrigin) {
   const { io, p, check } = ctx
   if (!ctx.key) {
@@ -268,9 +272,10 @@ async function localCheck(ctx, noOrigin) {
     io.err("No manifests in this folder (package.json, pyproject.toml, go.mod and the like).\n")
     return check ? 2 : 1
   }
+  if (!ctx.args.flags.watch) return localSets(ctx, found)
   const files = []
   const notes = []
-  const watch = ctx.args.flags.watch ? watchName(io) : null
+  const watch = watchName(io)
   let last = null
   if (found.length > ctx.maxFiles) {
     notes.push(`${text.plural(found.length, "manifest")} found, the first ${ctx.maxFiles} checked (each one costs credits). Raise it with --max-files.`)
@@ -280,7 +285,7 @@ async function localCheck(ctx, noOrigin) {
     if (content === null) notes.push(`${file}: could not be read.`)
     else if (content.length > MAX_CHARACTERS) notes.push(`${file}: over ${text.num(MAX_CHARACTERS)} characters, not sent.`)
     else {
-      const answer = await checkAll(ctx, watch === null ? checkBody(file, content) : { ...checkBody(file, content), watch })
+      const answer = await checkAll(ctx, { ...checkBody(file, content), watch })
       if (answer.status === 200 && answer.json && Array.isArray(answer.json.findings)) files.push({ path: file, answer: answer.json })
       else if (answer.status === 401 || answer.status === 402) return refuse(ctx, answer)
       else {
@@ -292,6 +297,37 @@ async function localCheck(ctx, noOrigin) {
   }
   if (!files.length && last) return refuse(ctx, last)
   return report(ctx, { kind: "local", files, notes })
+}
+
+/** The folder's manifests and the lockfiles beside them, in sets of files. */
+async function localSets(ctx, found) {
+  const { io } = ctx
+  const listed = filesToSend(io, found)
+  const notes = []
+  if (listed.length > ctx.maxFiles) notes.push(`${text.plural(listed.length, "file")} found, the first ${ctx.maxFiles} sent. Raise it with --max-files.`)
+  const entries = []
+  for (const path of listed.slice(0, ctx.maxFiles)) {
+    const content = io.readFile(`${io.cwd}/${path}`)
+    if (content === null) notes.push(`${path}: could not be read.`)
+    else if (content.length > MAX_CHARACTERS) {
+      notes.push(`${path}: over ${text.num(MAX_CHARACTERS)} characters, not sent${isLockfile(path) ? "; its manifest was read as a fresh install would land" : ""}.`)
+    } else entries.push({ path, content })
+  }
+  const drafts = []
+  let last = null
+  for (const set of fileSets(entries)) {
+    const answer = await checkAll(ctx, { files: set, detail: "summary" })
+    const paths = set.map((file) => file.path)
+    if (answer.status === 200 && answer.json && Array.isArray(answer.json.findings)) drafts.push({ files: paths, answer: answer.json })
+    else if (answer.status === 401 || answer.status === 402) return refuse(ctx, answer)
+    else {
+      last = answer
+      const message = answer.json && typeof answer.json.message === "string" ? answer.json.message : null
+      notes.push(`${paths.join(", ")}: ${answer.status === 0 || answer.status >= 500 ? "Since could not be reached." : message ?? `Since answered ${answer.status}.`}`)
+    }
+  }
+  if (!drafts.length && last) return refuse(ctx, last)
+  return report(ctx, { kind: "local", files: drafts.map((draft) => ({ path: null, answer: draft.answer })), drafts, notes })
 }
 
 /** Print what was found and return the exit code. */
@@ -307,7 +343,7 @@ function report(ctx, data) {
   const failing = check ? items.filter((item) => text.fails(item, ctx.failOn)) : []
   const exit = failing.length ? 1 : 0
   if (args.flags.json) {
-    const whole = data.kind === "scan" ? data.result : data.kind === "repo" ? data.answer : { files: data.files }
+    const whole = data.kind === "scan" ? data.result : data.kind === "repo" ? data.answer : data.drafts ? { drafts: data.drafts } : { files: data.files }
     io.out(`${JSON.stringify(whole, null, 2)}\n`)
     return exit
   }
@@ -340,7 +376,9 @@ function report(ctx, data) {
     for (const note of text.answerNotes([data.answer])) notes.push(note)
   } else {
     const checked = data.files.reduce((sum, file) => sum + (wholeNumber(file.answer.checkedCount) ?? 0), 0)
-    lines.push(`  ${[c.bold("This folder"), `${text.plural(data.files.length, "manifest")} checked`, currentAsOf(io, answerAsOf(data.files.map((file) => file.answer)))].filter(Boolean).join("  ")}`)
+    // Sets of files count the files sent; watched manifests, the manifests.
+    const sent = data.drafts ? text.plural(data.drafts.reduce((sum, draft) => sum + draft.files.length, 0), "file") : text.plural(data.files.length, "manifest")
+    lines.push(`  ${[c.bold("This folder"), `${sent} checked`, currentAsOf(io, answerAsOf(data.files.map((file) => file.answer)))].filter(Boolean).join("  ")}`)
     lines.push(`  ${counts}   ${text.num(checked)} checked`)
     for (const note of data.notes) notes.push(note)
     // A file --watch could not watch says why, as the answer words it.
@@ -348,7 +386,7 @@ function report(ctx, data) {
       if (isObject(file.answer.watch) && file.answer.watch.status !== "watching") notes.push(`${file.path}: ${file.answer.watch.message}`)
     }
     for (const note of text.answerNotes(data.files.map((file) => file.answer))) notes.push(note)
-    notes.push(`Only manifests were checked. Connect the repository to check its code too: ${APP}?utm_source=cli`)
+    notes.push(`Only ${data.drafts ? "manifests and lockfiles" : "manifests"} were checked. Connect the repository to check its code too: ${APP}?utm_source=cli`)
   }
   lines.push("")
   for (const line of text.findingLines(items, all, c, more)) lines.push(line)
@@ -657,7 +695,7 @@ export async function run(argv, io) {
     if (!/^\d{1,4}d?$/.test(args.flags.within) || Number.parseInt(args.flags.within, 10) < 1) return usage("--within takes a number of days, as 30d.")
     within = Number.parseInt(args.flags.within, 10)
   }
-  let maxFiles = 10
+  let maxFiles = 50
   if (args.flags["max-files"] !== undefined) {
     if (!/^\d{1,3}$/.test(args.flags["max-files"]) || Number.parseInt(args.flags["max-files"], 10) < 1) return usage("--max-files takes a number from 1 to 999.")
     maxFiles = Number.parseInt(args.flags["max-files"], 10)

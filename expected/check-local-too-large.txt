@@ -1,0 +1,12 @@
+$ since check
+
+  This folder  1 file checked
+  No findings   1 checked
+
+  package-lock.json: over 500,000 characters, not sent; its manifest was read as a fresh install would land.
+  Only manifests and lockfiles were checked. Connect the repository to check its code too: https://app.since.dev?utm_source=cli
+
+  Passed        nothing at high or above
+--- log
+POST /v1/check key {"detail":"summary","files":[{"content":"{\n  \"name\": \"shop\",\n  \"dependencies\": {\n    \"lodash\": \"^4.17.0\"\n  }\n}\n","path":"package.json"}]}
+--- exit 0

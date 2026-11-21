@@ -31,7 +31,7 @@
       "request": "POST /v1/check",
       "status": 200,
       "body": {
-        "input": "manifest",
+        "input": "files",
         "checked": [],
         "findings": [
           {
@@ -206,41 +206,7 @@
               }
             ],
             "source": "https://www.npmjs.com/package/request"
-          }
-        ],
-        "unresolved": [
-          {
-            "name": "npm:openai@4.20.0",
-            "where": [
-              {
-                "file": "package.json",
-                "line": 7
-              }
-            ],
-            "reason": "Since is reading what changed in 197 releases of openai after 4.20.0 now. Call check_code again in about 60 seconds for those changes; this answer is free."
-          }
-        ],
-        "truncated": true,
-        "coverage": {
-          "sources": [],
-          "missing": []
-        },
-        "reading": {
-          "retryAfterSec": 60,
-          "releases": 197
-        },
-        "checkedCount": 4,
-        "totalFindings": 579,
-        "nextCursor": null
-      }
-    },
-    {
-      "request": "POST /v1/check",
-      "status": 200,
-      "body": {
-        "input": "manifest",
-        "checked": [],
-        "findings": [
+          },
           {
             "surface": {
               "kind": "package",
@@ -369,6 +335,16 @@
         ],
         "unresolved": [
           {
+            "name": "npm:openai@4.20.0",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 7
+              }
+            ],
+            "reason": "Since is reading what changed in 197 releases of openai after 4.20.0 now. Call check_code again in about 60 seconds for those changes; this answer is free."
+          },
+          {
             "name": "pypi:pydantic@1.10.13",
             "where": [
               {
@@ -396,11 +372,15 @@
         },
         "reading": {
           "retryAfterSec": 60,
-          "releases": 90
+          "releases": 287
         },
-        "checkedCount": 3,
-        "totalFindings": 4750,
-        "nextCursor": null
+        "checkedCount": 7,
+        "totalFindings": 12,
+        "nextCursor": null,
+        "draft": {
+          "files": 2,
+          "named": 2
+        }
       }
     }
   ]
