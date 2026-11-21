@@ -22,10 +22,12 @@ $ since check
 
   passed    NumPy 1.25: end of life 2025-06-18
             test/automatic/dataframe/dataframe-select-optimized.py:2  and 18 more   use 2.4.6
+            write "numpy>=2.4.6",   at pyproject.toml:44
             https://endoflife.date/numpy
 
   critical  fast-xml-parser: 7 security advisories
             scalene/scalene-gui/package-lock.json   use 5.7.0
+            run npm install fast-xml-parser@5.7.0
             https://osv.dev/vulnerability/GHSA-m7jm-9gc2-mpf2
 
   high      GHSA-7f2v-3qq3-vvjf: Vega Cross-Site Scripting (XSS) via expressions abusing toString calls in environments using the VEGA_DEBUG global variable

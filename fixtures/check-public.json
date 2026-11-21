@@ -237,7 +237,12 @@
             "daysLeft": null,
             "severity": "critical",
             "replacement": "5.7.0",
-            "effectiveDate": null
+            "effectiveDate": null,
+            "edit": {
+              "file": "scalene/scalene-gui/package-lock.json",
+              "command": "npm install fast-xml-parser@5.7.0",
+              "note": "Moves fast-xml-parser to 5.7.0 and writes the lockfile again."
+            }
           },
           {
             "kind": "behind",
@@ -304,7 +309,14 @@
             "daysLeft": -510,
             "severity": "high",
             "replacement": "2.4.6",
-            "effectiveDate": "2025-06-18"
+            "effectiveDate": "2025-06-18",
+            "edit": {
+              "file": "pyproject.toml",
+              "line": 44,
+              "from": "    \"numpy>=2.3.4\",",
+              "to": "    \"numpy>=2.4.6\",",
+              "note": "Raises the lower bound to 2.4.6."
+            }
           },
           {
             "kind": "behind",

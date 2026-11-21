@@ -112,6 +112,7 @@ def scan_items(findings):
             "extra": max(0, len(where) - 1) + (finding["more"] if is_number(finding.get("more")) else 0),
             "replacement": finding.get("replacement") or None,
             "differs": differs_line(finding.get("replacement"), finding.get("replacementNotes")),
+            "write": write_line(finding.get("edit")),
             "source": source or None,
             "hint": None,
         }
@@ -212,6 +213,7 @@ def check_items(findings, fallback_path, program):
             "extra": max(0, places - 1),
             "replacement": finding.get("replacement") or None,
             "differs": differs_line(finding.get("replacement"), finding.get("replacementNotes")),
+            "write": write_line(finding.get("edit")),
             "source": source if isinstance(source, str) and source else None,
             "hint": None,
         }
@@ -292,6 +294,18 @@ def counts_line(items, within):
     return "No findings" if within is None else "Nothing dated within %s" % plural(within, "day")
 
 
+def write_line(edit):
+    """The exact line to write, or the command that moves a lockfile, as Since read it back and checked it: one line under the finding."""
+    if not isinstance(edit, dict):
+        return None
+    if isinstance(edit.get("command"), str) and edit["command"]:
+        return "run %s" % edit["command"]
+    if isinstance(edit.get("to"), str) and edit["to"].strip():
+        at = "   at %s:%s" % (edit["file"], edit["line"]) if isinstance(edit.get("line"), int) and edit.get("file") else ""
+        return "write %s%s" % (edit["to"].strip(), at)
+    return None
+
+
 def finding_lines(items, show_all, c, more_hint):
     """The findings, three lines each: when and what, where and the replacement, the source. One more when the replacement works differently."""
     lines = []
@@ -302,6 +316,8 @@ def finding_lines(items, show_all, c, more_hint):
         detail = _join([place, "use %s" % item["replacement"] if item["replacement"] else None, "list them: %s" % item["hint"] if item.get("hint") else None], "   ")
         if detail:
             lines.append(c.dim(PAD + detail))
+        if item.get("write"):
+            lines.append(c.dim(PAD + item["write"]))
         if item.get("differs"):
             lines.append(c.dim(PAD + item["differs"]))
         if item["source"]:

@@ -37,6 +37,14 @@ const placeOf = (path, line) => (typeof line === "number" && line > 0 ? `${path}
  * What a replacement does differently, as one line under it: the first difference and how many more there are. A move to
  * a model that changes a default or refuses a setting is never shown as a new id alone.
  */
+/** The exact line to write, or the command that moves a lockfile, as Since read it back and checked it: one line under the finding. */
+export function writeLine(edit) {
+  if (!edit || typeof edit !== "object") return null
+  if (typeof edit.command === "string" && edit.command) return `run ${edit.command}`
+  if (typeof edit.to === "string" && edit.to.trim()) return `write ${edit.to.trim()}${typeof edit.line === "number" && edit.file ? `   at ${edit.file}:${edit.line}` : ""}`
+  return null
+}
+
 export function differsLine(replacement, notes) {
   const texts = Array.isArray(notes) ? notes.map((note) => (note && typeof note.text === "string" ? note.text.trim() : "")).filter(Boolean) : []
   if (!replacement || !texts.length) return null
@@ -64,6 +72,7 @@ export function scanItems(findings) {
       extra: Math.max(0, where.length - 1) + (typeof finding.more === "number" ? finding.more : 0),
       replacement: finding.replacement || null,
       differs: differsLine(finding.replacement, finding.replacementNotes),
+      write: writeLine(finding.edit),
       source: source || null,
       hint: null,
     }
@@ -151,6 +160,7 @@ export function checkItems(findings, fallbackPath, program) {
       extra: Math.max(0, (typeof finding.placeCount === "number" ? finding.placeCount : where.length) - 1),
       replacement: finding.replacement || null,
       differs: differsLine(finding.replacement, finding.replacementNotes),
+      write: writeLine(finding.edit),
       source: typeof source === "string" && source ? source : null,
       hint: null,
     }
@@ -230,6 +240,7 @@ export function findingLines(items, all, c, moreHint) {
     const place = item.place ? item.place + (item.extra ? `  and ${num(item.extra)} more` : "") : null
     const detail = [place, item.replacement ? `use ${item.replacement}` : null, item.hint ? `list them: ${item.hint}` : null].filter(Boolean).join("   ")
     if (detail) lines.push(c.dim(PAD + detail))
+    if (item.write) lines.push(c.dim(PAD + item.write))
     if (item.differs) lines.push(c.dim(PAD + item.differs))
     if (item.source) lines.push(c.dim(PAD + item.source))
     lines.push("")
