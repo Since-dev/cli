@@ -6,12 +6,12 @@
 
 import { createHash } from "node:crypto"
 import { init } from "./init.mjs"
-import { MAX_CHARACTERS, MAX_SET_FILES, checkBody, fileSets, filesToSend, findManifests, isLockfile, parseRepo } from "./local.mjs"
+import { MAX_CHARACTERS, MAX_SET_FILES, checkBody, fileSets, filesToSend, findManifests, importingFiles, isLockfile, parseRepo } from "./local.mjs"
 import { BRIEF_TIMEOUT_MS, HOOK_TIMEOUT_MS, namesSomething, nearestDeclarations, postToolUse, sessionStart, STOP_TIMEOUT_MS, stopHook } from "./hook.mjs"
 import { briefAnswer, claudeEvents, CLIENTS, stopAnswer, writeAnswer } from "./clients.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.7.0"
+export const VERSION = "0.8.0"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
@@ -76,6 +76,7 @@ function help(p) {
     ["--ecosystem <name>", "changed: the registry, as npm (default) or pypi"],
     ["--since <version>", "changed: only what changed after this version"],
     ["--to <version>", "changed: up to this version, with how each release was read"],
+    ["--to <package@version>", "check: is the move clear for this folder's code, as --to npm:express@4.21.2"],
     ["--email <address>", "login: the email to sign in with"],
     ["--dry-run", "init: show what would be written"],
     ["--yes", "init: write without asking"],
@@ -309,6 +310,79 @@ async function localCheck(ctx, noOrigin) {
   }
   if (!files.length && last) return refuse(ctx, last)
   return report(ctx, { kind: "local", files, notes })
+}
+
+/** A move as `--to` gives it: `npm:express@4.21.2`, or `express@4.21.2` with the registry read from the folder's manifests. */
+function moveOf(io, value, manifests) {
+  const match = /^(?:([a-z][a-z0-9]*):)?(.+)@([^@\s]+)$/i.exec(String(value).trim())
+  if (!match) return null
+  const named = { npm: "npm", pypi: "pypi", cargo: "cargo", go: "go", gem: "rubygems", rubygems: "rubygems", composer: "packagist", packagist: "packagist", maven: "maven", nuget: "nuget" }
+  const ecosystem = match[1] ? named[match[1].toLowerCase()] ?? match[1].toLowerCase()
+    : manifests.some((file) => file.endsWith("package.json")) ? "npm" : manifests.some((file) => /requirements[^/]*\.txt$|pyproject\.toml$/.test(file)) ? "pypi" : null
+  return ecosystem ? { ecosystem, name: match[2], version: match[3] } : null
+}
+
+/**
+ * `since check --to <package@version>`: the receipt of a move of one of the folder's packages (Feature 7). The manifests and lockfiles, and
+ * the code files that import the package, go as one set of files with `to`; the answer says clear, not clear (the change and the line) or
+ * not settled (what was not read). In a check, not clear fails the run.
+ */
+async function receiptCheck(ctx) {
+  const { io, p, c, check, args } = ctx
+  if (!ctx.key) {
+    io.err(`Checking a move needs a key. Sign in first: ${p} login\n`)
+    return check ? 2 : 1
+  }
+  const manifests = findManifests(io)
+  const move = moveOf(io, args.flags.to, manifests)
+  if (!move) {
+    io.err(`--to takes the package and the version moved to, as ${p} check --to npm:express@4.21.2\n`)
+    return 2
+  }
+  const files = []
+  let size = 0
+  const add = (file) => {
+    if (files.length >= MAX_SET_FILES || files.some((other) => other.path === file.path) || size + file.content.length > MAX_CHARACTERS) return
+    files.push(file)
+    size += file.content.length
+  }
+  for (const path of filesToSend(io, manifests)) {
+    const content = io.readFile(`${io.cwd}/${path}`)
+    if (content !== null && content.length <= MAX_CHARACTERS) add({ path, content })
+  }
+  for (const file of importingFiles(io, move.name, move.ecosystem)) add(file)
+  if (!files.length) {
+    io.err("No manifests in this folder (package.json, pyproject.toml, go.mod and the like).\n")
+    return check ? 2 : 1
+  }
+  const answer = await checkAll(ctx, { files, detail: "summary", to: `${move.ecosystem}:${move.name}@${move.version}` })
+  if (answer.status !== 200 || !answer.json || !isObject(answer.json.receipt)) return refuse(ctx, answer)
+  const receipt = answer.json.receipt
+  if (args.flags.json) {
+    io.out(`${JSON.stringify(answer.json, null, 2)}\n`)
+    return check && receipt.verdict === "not_clear" ? 1 : 0
+  }
+  const verdict = { clear: "Clear", not_clear: "Not clear", not_settled: "Not settled" }[receipt.verdict] ?? String(receipt.verdict)
+  const lines = ["", `  ${c.bold(`${receipt.package?.name ?? move.name} ${receipt.from ?? "?"} to ${receipt.to ?? move.version}`)}  ${verdict}  ${text.plural(files.length, "file")} checked`, "",
+    `  ${receipt.sentence}`]
+  const listed = isObject(receipt.releases) && Array.isArray(receipt.releases.list) ? receipt.releases.list : []
+  if (listed.length) {
+    lines.push("")
+    for (const release of listed.slice(0, 20)) {
+      const how = release.read === "full" ? "read in full" : release.read === "partial" ? `read in part${Array.isArray(release.notRead) && release.notRead.length ? ` (not ${release.notRead.join(", ")})` : ""}`
+        : release.read === "reading" ? "still being read" : "could not be read"
+      lines.push(`  ${String(release.version).padEnd(14)}${how}`)
+    }
+    if (listed.length > 20) lines.push(`  ${text.plural(listed.length - 20, "more release")}`)
+  }
+  for (const entry of Array.isArray(receipt.reaching) ? receipt.reaching : []) {
+    const place = Array.isArray(entry.where) ? entry.where.find((where) => where && where.file) : null
+    lines.push("", `  ${String(entry.release ?? "").padEnd(14)}${entry.title}${entry.state === "needs_review" ? " (to review)" : ""}`)
+    if (place) lines.push(`  ${"".padEnd(14)}${place.file}${typeof place.line === "number" ? `:${place.line}` : ""}`)
+  }
+  lines.push("")
+  io.out(lines.join("\n"))
+  return check && receipt.verdict === "not_clear" ? 1 : 0
 }
 
 /**
@@ -592,6 +666,13 @@ async function repoCommand(ctx) {
   if (!fromTree && args.flags.local) {
     io.err("--local checks the folder you are in, so it takes no repository name.\n")
     return 2
+  }
+  if (args.flags.to !== undefined) {
+    if (!fromTree || args.flags.watch || args.flags.staged) {
+      io.err(`--to checks a move of a package in the folder you are in, so it takes ${!fromTree ? "no repository name" : args.flags.watch ? "no --watch" : "no --staged"}.\n`)
+      return 2
+    }
+    return receiptCheck(ctx)
   }
   if (args.flags.staged) {
     if (!fromTree || args.flags.watch) {

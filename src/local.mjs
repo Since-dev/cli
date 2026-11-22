@@ -110,3 +110,35 @@ export function checkBody(file, content) {
   const name = file.split("/").pop()
   return { [LOCKFILES.has(name) ? "lockfile" : "manifest"]: { path: file, content }, detail: "summary" }
 }
+
+const CODE_FILE = /\.(?:[cm]?[jt]sx?|py|go|rb|java|kt|cs|php|rs|swift|scala|ex|exs|dart)$/i
+const WALK_ENTRIES = 20_000
+
+/**
+ * The code files under the folder that import a package, nearest the top first, up to `limit`: a quoted module name for JavaScript and the
+ * like (`"express"`, `'express/router'`), `import`/`from` with the Python spelling for PyPI. What a move breaks is in these files.
+ */
+export function importingFiles(io, name, ecosystem, limit = MAX_SET_FILES) {
+  const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const python = name.toLowerCase().replace(/[-.]+/g, "_")
+  const pattern = ecosystem === "pypi"
+    ? new RegExp(`^\\s*(?:import|from)\\s+${escape(python)}\\b`, "im")
+    : new RegExp(`["'\`]${escape(name)}(?:/[^"'\`]*)?["'\`]`)
+  const found = []
+  let seen = 0
+  const walk = (folder) => {
+    for (const entry of io.list(folder ? `${io.cwd}/${folder}` : io.cwd)) {
+      if (++seen > WALK_ENTRIES || found.length >= limit) return
+      const path = folder ? `${folder}/${entry.name}` : entry.name
+      if (entry.dir) {
+        if (!SKIP.has(entry.name) && !entry.name.startsWith(".")) walk(path)
+      } else if (CODE_FILE.test(entry.name)) {
+        const content = io.readFile(`${io.cwd}/${path}`)
+        if (content !== null && content.length <= MAX_CHARACTERS && pattern.test(content)) found.push({ path, content })
+      }
+    }
+  }
+  walk("")
+  const depth = (path) => path.split("/").length
+  return found.sort((a, b) => depth(a.path) - depth(b.path) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
+}

@@ -1,0 +1,13 @@
+{
+  "args": [
+    "check",
+    "--to",
+    "express@4.21.2"
+  ],
+  "now": "2026-11-22T05:00:00.000Z",
+  "files": {
+    "package.json": "{\n  \"name\": \"app\",\n  \"dependencies\": { \"express\": \"4.19.2\" }\n}\n",
+    "src/app.ts": "import express from \"express\";\nconst app = express();\napp.get(\"/\", (req, res) => res.redirect(req.query.next));\n",
+    "src/util.ts": "export const add = (a, b) => a + b;\n"
+  }
+}

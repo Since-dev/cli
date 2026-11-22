@@ -1,0 +1,4 @@
+$ since check --to express@4.21.2
+--- stderr
+Checking a move needs a key. Sign in first: since login
+--- exit 2

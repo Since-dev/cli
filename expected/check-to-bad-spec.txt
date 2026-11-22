@@ -1,0 +1,4 @@
+$ since check --to express
+--- stderr
+--to takes the package and the version moved to, as since check --to npm:express@4.21.2
+--- exit 2

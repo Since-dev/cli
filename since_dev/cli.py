@@ -14,7 +14,7 @@ from urllib.parse import quote
 from . import __version__ as VERSION
 from . import render as text
 from .init import dumps, init, loads
-from .local import MAX_CHARACTERS, MAX_SET_FILES, check_body, file_sets, files_to_send, find_manifests, is_lockfile, parse_repo
+from .local import MAX_CHARACTERS, MAX_SET_FILES, check_body, file_sets, files_to_send, find_manifests, importing_files, is_lockfile, parse_repo
 from .hook import BRIEF_TIMEOUT_MS, HOOK_TIMEOUT_MS, STOP_TIMEOUT_MS, _nearest_declarations, names_something, post_tool_use, session_start, stop_hook
 from .clients import CLIENTS, brief_answer, claude_events, stop_answer, write_answer
 
@@ -93,6 +93,7 @@ def help_text(p):
         ["--ecosystem <name>", "changed: the registry, as npm (default) or pypi"],
         ["--since <version>", "changed: only what changed after this version"],
         ["--to <version>", "changed: up to this version, with how each release was read"],
+        ["--to <package@version>", "check: is the move clear for this folder's code, as --to npm:express@4.21.2"],
         ["--email <address>", "login: the email to sign in with"],
         ["--dry-run", "init: show what would be written"],
         ["--yes", "init: write without asking"],
@@ -368,6 +369,95 @@ def local_check(ctx, no_origin):
     if not files and last is not None:
         return refuse(ctx, last)
     return report(ctx, {"kind": "local", "files": files, "notes": notes})
+
+
+MOVE_REGISTRIES = {"npm": "npm", "pypi": "pypi", "cargo": "cargo", "go": "go", "gem": "rubygems", "rubygems": "rubygems", "composer": "packagist",
+                   "packagist": "packagist", "maven": "maven", "nuget": "nuget"}
+
+
+def move_of(value, manifests):
+    """A move as --to gives it: npm:express@4.21.2, or express@4.21.2 with the registry read from the folder's manifests."""
+    match = re.match(r"^(?:([a-z][a-z0-9]*):)?(.+)@([^@\s]+)$", str(value).strip(), re.I)
+    if not match:
+        return None
+    if match.group(1):
+        ecosystem = MOVE_REGISTRIES.get(match.group(1).lower(), match.group(1).lower())
+    elif any(file.endswith("package.json") for file in manifests):
+        ecosystem = "npm"
+    elif any(re.search(r"requirements[^/]*\.txt$|pyproject\.toml$", file) for file in manifests):
+        ecosystem = "pypi"
+    else:
+        ecosystem = None
+    return {"ecosystem": ecosystem, "name": match.group(2), "version": match.group(3)} if ecosystem else None
+
+
+def receipt_check(ctx):
+    """`since check --to <package@version>`: the receipt of a move of one of the folder's packages (Feature 7). The manifests and
+    lockfiles, and the code files that import the package, go as one set of files with `to`; in a check, not clear fails the run."""
+    io, p, c, check, args = ctx["io"], ctx["p"], ctx["c"], ctx["check"], ctx["args"]
+    if not ctx["key"]:
+        io.err("Checking a move needs a key. Sign in first: %s login\n" % p)
+        return 2 if check else 1
+    manifests = find_manifests(io)
+    move = move_of(args["flags"]["to"], manifests)
+    if not move:
+        io.err("--to takes the package and the version moved to, as %s check --to npm:express@4.21.2\n" % p)
+        return 2
+    files = []
+    size = [0]
+
+    def add(file):
+        if len(files) >= MAX_SET_FILES or any(other["path"] == file["path"] for other in files) or size[0] + len(file["content"]) > MAX_CHARACTERS:
+            return
+        files.append(file)
+        size[0] += len(file["content"])
+
+    for path in files_to_send(io, manifests):
+        content = io.read_file("%s/%s" % (io.cwd, path))
+        if content is not None and len(content) <= MAX_CHARACTERS:
+            add({"path": path, "content": content})
+    for file in importing_files(io, move["name"], move["ecosystem"]):
+        add(file)
+    if not files:
+        io.err("No manifests in this folder (package.json, pyproject.toml, go.mod and the like).\n")
+        return 2 if check else 1
+    answer = check_all(ctx, {"files": files, "detail": "summary", "to": "%s:%s@%s" % (move["ecosystem"], move["name"], move["version"])})
+    if answer["status"] != 200 or answer["json"] is None or not isinstance(answer["json"].get("receipt"), dict):
+        return refuse(ctx, answer)
+    receipt = answer["json"]["receipt"]
+    failed = 1 if check and receipt.get("verdict") == "not_clear" else 0
+    if args["flags"].get("json"):
+        io.out("%s\n" % json.dumps(answer["json"], indent=2, ensure_ascii=False))
+        return failed
+    verdict = {"clear": "Clear", "not_clear": "Not clear", "not_settled": "Not settled"}.get(receipt.get("verdict"), str(receipt.get("verdict")))
+    package = receipt.get("package") if isinstance(receipt.get("package"), dict) else {}
+    lines = ["", "  %s  %s  %s checked" % (c.bold("%s %s to %s" % (package.get("name") or move["name"], receipt.get("from") or "?", receipt.get("to") or move["version"])),
+                                           verdict, text.plural(len(files), "file")), "", "  %s" % receipt.get("sentence")]
+    releases = receipt.get("releases") if isinstance(receipt.get("releases"), dict) else {}
+    listed = releases.get("list") if isinstance(releases.get("list"), list) else []
+    if listed:
+        lines.append("")
+        for release in listed[:20]:
+            if release.get("read") == "full":
+                how = "read in full"
+            elif release.get("read") == "partial":
+                not_read = release.get("notRead") if isinstance(release.get("notRead"), list) else []
+                how = "read in part%s" % (" (not %s)" % ", ".join(not_read) if not_read else "")
+            elif release.get("read") == "reading":
+                how = "still being read"
+            else:
+                how = "could not be read"
+            lines.append("  %s%s" % (str(release.get("version")).ljust(14), how))
+        if len(listed) > 20:
+            lines.append("  %s" % text.plural(len(listed) - 20, "more release"))
+    for entry in receipt.get("reaching") if isinstance(receipt.get("reaching"), list) else []:
+        place = next((where for where in (entry.get("where") if isinstance(entry.get("where"), list) else []) if isinstance(where, dict) and where.get("file")), None)
+        lines.extend(["", "  %s%s%s" % (str(entry.get("release") or "").ljust(14), entry.get("title"), " (to review)" if entry.get("state") == "needs_review" else "")])
+        if place:
+            lines.append("  %s%s%s" % ("".ljust(14), place["file"], ":%s" % place["line"] if isinstance(place.get("line"), int) else ""))
+    lines.append("")
+    io.out("\n".join(lines))
+    return failed
 
 
 def staged_check(ctx):
@@ -703,6 +793,12 @@ def repo_command(ctx):
     if not from_tree and args["flags"].get("local"):
         io.err("--local checks the folder you are in, so it takes no repository name.\n")
         return 2
+    if args["flags"].get("to") is not None:
+        if not from_tree or args["flags"].get("watch") or args["flags"].get("staged"):
+            io.err("--to checks a move of a package in the folder you are in, so it takes %s.\n" % (
+                "no repository name" if not from_tree else "no --watch" if args["flags"].get("watch") else "no --staged"))
+            return 2
+        return receipt_check(ctx)
     if args["flags"].get("staged"):
         if not from_tree or args["flags"].get("watch"):
             io.err("--staged checks what git has staged in the folder you are in, so it takes %s.\n" % ("no --watch" if args["flags"].get("watch") else "no repository name"))

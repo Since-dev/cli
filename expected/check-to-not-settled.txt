@@ -1,0 +1,13 @@
+$ since check --to express@4.21.2
+
+  express 4.19.2 to 4.21.2  Not settled  2 files checked
+
+  Not settled: 3 of 4 releases read in full (4.20.0, 4.21.0, 4.21.1, 4.21.2); 4.21.1 was read in part (not release notes (none were found)).
+
+  4.20.0        read in full
+  4.21.0        read in full
+  4.21.1        read in part (not release notes (none were found))
+  4.21.2        read in full
+--- log
+POST /v1/check key {"detail":"summary","files":[{"content":"{\n  \"name\": \"app\",\n  \"dependencies\": { \"express\": \"4.19.2\" }\n}\n","path":"package.json"},{"content":"import express from \"express\";\nconst app = express();\napp.get(\"/\", (req, res) => res.redirect(req.query.next));\n","path":"src/app.ts"}],"to":"npm:express@4.21.2"}
+--- exit 0

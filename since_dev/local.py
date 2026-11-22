@@ -120,3 +120,36 @@ def file_sets(files):
 def check_body(file, content):
     name = file.split("/")[-1]
     return {"lockfile" if name in LOCKFILES else "manifest": {"path": file, "content": content}, "detail": "summary"}
+
+
+CODE_FILE = re.compile(r"\.(?:[cm]?[jt]sx?|py|go|rb|java|kt|cs|php|rs|swift|scala|ex|exs|dart)$", re.I)
+WALK_ENTRIES = 20000
+
+
+def importing_files(io, name, ecosystem, limit=MAX_SET_FILES):
+    """The code files under the folder that import a package, nearest the top first, up to `limit`: a quoted module name for JavaScript
+    and the like ("express", 'express/router'), `import`/`from` with the Python spelling for PyPI. What a move breaks is in these files."""
+    python = re.sub(r"[-.]+", "_", name.lower())
+    if ecosystem == "pypi":
+        pattern = re.compile(r"^\s*(?:import|from)\s+%s\b" % re.escape(python), re.I | re.M)
+    else:
+        pattern = re.compile(r"[\"'`]%s(?:/[^\"'`]*)?[\"'`]" % re.escape(name))
+    found = []
+    seen = [0]
+
+    def walk(folder):
+        for entry in io.list("%s/%s" % (io.cwd, folder) if folder else io.cwd):
+            seen[0] += 1
+            if seen[0] > WALK_ENTRIES or len(found) >= limit:
+                return
+            path = "%s/%s" % (folder, entry["name"]) if folder else entry["name"]
+            if entry["dir"]:
+                if entry["name"] not in SKIP and not entry["name"].startswith("."):
+                    walk(path)
+            elif CODE_FILE.search(entry["name"]):
+                content = io.read_file("%s/%s" % (io.cwd, path))
+                if content is not None and len(content) <= MAX_CHARACTERS and pattern.search(content):
+                    found.append({"path": path, "content": content})
+
+    walk("")
+    return sorted(found, key=lambda file: (len(file["path"].split("/")), file["path"]))

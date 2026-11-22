@@ -1,0 +1,81 @@
+{
+  "args": [
+    "check",
+    "--to",
+    "express@4.21.2"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-22T05:00:00.000Z",
+  "files": {
+    "package.json": "{\n  \"name\": \"app\",\n  \"dependencies\": { \"express\": \"4.19.2\" }\n}\n",
+    "src/app.ts": "import express from \"express\";\nconst app = express();\napp.get(\"/\", (req, res) => res.redirect(req.query.next));\n",
+    "src/util.ts": "export const add = (a, b) => a + b;\n"
+  },
+  "http": [
+    {
+      "request": "POST /v1/check",
+      "status": 200,
+      "body": {
+        "input": "files",
+        "checked": [],
+        "findings": [],
+        "unresolved": [],
+        "truncated": false,
+        "coverage": {
+          "sources": [],
+          "asOf": "2026-11-21T18:30:42.911Z",
+          "missing": []
+        },
+        "receipt": {
+          "package": {
+            "ecosystem": "npm",
+            "name": "express"
+          },
+          "from": "4.19.2",
+          "to": "4.21.2",
+          "verdict": "not_settled",
+          "sentence": "Not settled: 3 of 4 releases read in full (4.20.0, 4.21.0, 4.21.1, 4.21.2); 4.21.1 was read in part (not release notes (none were found)).",
+          "releases": {
+            "releases": 4,
+            "full": 3,
+            "partial": 1,
+            "unreadable": 0,
+            "failed": 0,
+            "reading": 0,
+            "list": [
+              {
+                "version": "4.20.0",
+                "date": "2024-09-10",
+                "read": "full"
+              },
+              {
+                "version": "4.21.0",
+                "date": "2024-10-08",
+                "read": "full"
+              },
+              {
+                "version": "4.21.1",
+                "date": "2024-10-08",
+                "read": "partial",
+                "notRead": [
+                  "release notes (none were found)"
+                ]
+              },
+              {
+                "version": "4.21.2",
+                "date": "2024-12-05",
+                "read": "full"
+              }
+            ]
+          },
+          "reaching": []
+        },
+        "checkedCount": 1,
+        "totalFindings": 0,
+        "nextCursor": null
+      }
+    }
+  ]
+}

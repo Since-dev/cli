@@ -1,5 +1,5 @@
 $ since --help
-since-dev 0.7.0: what in this repository is about to stop working
+since-dev 0.8.0: what in this repository is about to stop working
 
 Usage
   npx since-dev                       check this repository (reads the origin remote)
@@ -27,6 +27,7 @@ Options
   --ecosystem <name>   changed: the registry, as npm (default) or pypi
   --since <version>    changed: only what changed after this version
   --to <version>       changed: up to this version, with how each release was read
+  --to <package@version>check: is the move clear for this folder's code, as --to npm:express@4.21.2
   --email <address>    login: the email to sign in with
   --dry-run            init: show what would be written
   --yes                init: write without asking
