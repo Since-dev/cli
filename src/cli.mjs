@@ -8,15 +8,16 @@ import { createHash } from "node:crypto"
 import { init } from "./init.mjs"
 import { MAX_CHARACTERS, MAX_SET_FILES, checkBody, fileSets, filesToSend, findManifests, isLockfile, parseRepo } from "./local.mjs"
 import { BRIEF_TIMEOUT_MS, HOOK_TIMEOUT_MS, namesSomething, nearestDeclarations, postToolUse, sessionStart, STOP_TIMEOUT_MS, stopHook } from "./hook.mjs"
+import { briefAnswer, claudeEvents, CLIENTS, stopAnswer, writeAnswer } from "./clients.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.6.1"
+export const VERSION = "0.7.0"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
 const COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "hook", "help", "version"]
 const SWITCHES = ["all", "json", "local", "watch", "staged", "dry-run", "yes", "hook", "pre-commit", "block", "no-color", "help", "version"]
-const OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files"]
+const OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files", "client"]
 const FAIL_ON = ["low", "medium", "high", "critical", "none"]
 const MAX_PAGES = 10
 const MAX_WAIT_MS = 60_000
@@ -80,6 +81,7 @@ function help(p) {
     ["--yes", "init: write without asking"],
     ["--hook", "init: also add the write-time hooks for Claude Code, for you only"],
     ["--block", "hook stop: the agent fixes what is found before it stops"],
+    ["--client <name>", "hook: claude (default), cursor, codex or gemini"],
     ["--pre-commit", "init: also add a git pre-commit hook that runs check --staged"],
     ["--staged", "check: only what git has staged, for a pre-commit hook"],
     ["--max-files <n>", "how many manifests and lockfiles to send (default 50)"],
@@ -401,7 +403,7 @@ function changedPaths(io, cwd) {
 const briefPath = (io, cwd) => `${io.home}/.cache/since-dev/briefs/${createHash("sha256").update(String(cwd)).digest("hex").slice(0, 32)}.json`
 
 /** `since hook session-start`: the project's brief, said at the start of each session, checked again once a day or when its files change. */
-async function briefCommand(ctx, event) {
+async function briefCommand(ctx, event, client) {
   const { io } = ctx
   const file = briefPath(io, event.cwd)
   let cache = {}
@@ -410,7 +412,8 @@ async function briefCommand(ctx, event) {
     if (saved && typeof saved === "object" && !Array.isArray(saved)) cache = saved
   } catch {}
   const before = JSON.stringify(cache)
-  const output = await sessionStart(ctx, event, cache, (body) => call(ctx, "POST", "/v1/check", { body, key: ctx.key, timeoutMs: BRIEF_TIMEOUT_MS }))
+  const card = await sessionStart(ctx, event, cache, (body) => call(ctx, "POST", "/v1/check", { body, key: ctx.key, timeoutMs: BRIEF_TIMEOUT_MS }))
+  const output = card ? briefAnswer(client, card) : null
   if (JSON.stringify(cache) !== before) {
     try {
       io.writeFile(file, JSON.stringify(cache), 0o600)
@@ -440,7 +443,15 @@ async function hookCommand(ctx, name) {
     return 0
   }
   if (!ctx.key || !event || typeof event !== "object") return 0
-  if (name === "session-start") return briefCommand(ctx, event)
+  const client = ctx.args.flags.client ?? "claude"
+  // The agent's own event, as the hooks read it: one write, or each file a patch touched.
+  const events = claudeEvents(client, event)
+  if (!events.length) return 0
+  event = events[0]
+  if (name === "session-start") return briefCommand(ctx, event, client)
+  // Only Claude Code takes a finish note without going on: for the others the finish check runs only when the team chose to block, so no
+  // check is paid for that nobody would read.
+  if (name === "stop" && client !== "claude" && !ctx.args.flags.block) return 0
   const file = hookStatePath(io, event.session_id)
   let state = { files: {}, notes: [] }
   try {
@@ -450,11 +461,11 @@ async function hookCommand(ctx, name) {
   let output = null
   if (name === "stop") {
     const changed = changedPaths(io, event.cwd)
-    output = await stopHook(ctx, event, state, (body) => call(ctx, "POST", "/v1/check", { body, key: ctx.key, timeoutMs: STOP_TIMEOUT_MS }), changed,
-      { block: Boolean(ctx.args.flags.block) })
+    const note = await stopHook(ctx, event, state, (body) => call(ctx, "POST", "/v1/check", { body, key: ctx.key, timeoutMs: STOP_TIMEOUT_MS }), changed)
+    if (note) output = stopAnswer(client, note, Boolean(ctx.args.flags.block))
   } else {
-    const note = await postToolUse(ctx, event, state, (body) => call(ctx, "POST", "/v1/check", { body, key: ctx.key, timeoutMs: HOOK_TIMEOUT_MS }))
-    if (note) output = { hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: note } }
+    const note = await postToolUse(ctx, events.length > 1 ? events : event, state, (body) => call(ctx, "POST", "/v1/check", { body, key: ctx.key, timeoutMs: HOOK_TIMEOUT_MS }))
+    if (note) output = writeAnswer(client, note)
   }
   try {
     io.writeFile(file, JSON.stringify(state), 0o600)
@@ -826,6 +837,7 @@ export async function run(argv, io) {
     if (words[0] === "remove" && words.length !== 2) return usage(words.length > 2 ? `Too many words: ${words[2]}` : `${p} watches remove needs a watch's id, as ${p} watches lists them.`)
   } else if (command === "hook") {
     if (words.length !== 1) return usage(words.length > 1 ? `Too many words: ${words[1]}` : `${p} hook needs the hook's event, as ${p} hook post-tool-use`)
+    if (args.flags.client !== undefined && !CLIENTS.includes(args.flags.client)) return usage(`--client takes ${CLIENTS.slice(0, -1).join(", ")} or ${CLIENTS.at(-1)}.`)
   } else if (command === null || command === "check") {
     if (words.length > 1) return usage(`Too many words: ${words[1]}`)
     if (command === null && words.length === 1 && !words[0].includes("/")) return usage(`Unknown command: ${words[0]}`)

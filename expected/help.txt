@@ -1,5 +1,5 @@
 $ since --help
-since-dev 0.6.1: what in this repository is about to stop working
+since-dev 0.7.0: what in this repository is about to stop working
 
 Usage
   npx since-dev                       check this repository (reads the origin remote)
@@ -32,6 +32,7 @@ Options
   --yes                init: write without asking
   --hook               init: also add the write-time hooks for Claude Code, for you only
   --block              hook stop: the agent fixes what is found before it stops
+  --client <name>      hook: claude (default), cursor, codex or gemini
   --pre-commit         init: also add a git pre-commit hook that runs check --staged
   --staged             check: only what git has staged, for a pre-commit hook
   --max-files <n>      how many manifests and lockfiles to send (default 50)

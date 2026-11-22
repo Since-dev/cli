@@ -1,0 +1,5 @@
+$ since hook post-tool-use --client zed
+--- stderr
+--client takes claude, cursor, codex or gemini.
+Run since --help for the commands.
+--- exit 2

@@ -16,13 +16,14 @@ from . import render as text
 from .init import dumps, init, loads
 from .local import MAX_CHARACTERS, MAX_SET_FILES, check_body, file_sets, files_to_send, find_manifests, is_lockfile, parse_repo
 from .hook import BRIEF_TIMEOUT_MS, HOOK_TIMEOUT_MS, STOP_TIMEOUT_MS, _nearest_declarations, names_something, post_tool_use, session_start, stop_hook
+from .clients import CLIENTS, brief_answer, claude_events, stop_answer, write_answer
 
 DEFAULT_API = "https://api.since.dev"
 SITE = "https://since.dev"
 APP = "https://app.since.dev"
 COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "hook", "help", "version"]
 SWITCHES = ["all", "json", "local", "watch", "staged", "dry-run", "yes", "hook", "pre-commit", "block", "no-color", "help", "version"]
-OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files"]
+OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files", "client"]
 FAIL_ON = ["low", "medium", "high", "critical", "none"]
 MAX_PAGES = 10
 MAX_WAIT_MS = 60000
@@ -97,6 +98,7 @@ def help_text(p):
         ["--yes", "init: write without asking"],
         ["--hook", "init: also add the write-time hooks for Claude Code, for you only"],
         ["--block", "hook stop: the agent fixes what is found before it stops"],
+        ["--client <name>", "hook: claude (default), cursor, codex or gemini"],
         ["--pre-commit", "init: also add a git pre-commit hook that runs check --staged"],
         ["--staged", "check: only what git has staged, for a pre-commit hook"],
         ["--max-files <n>", "how many manifests and lockfiles to send (default 50)"],
@@ -462,7 +464,7 @@ def brief_path(io, cwd):
     return "%s/.cache/since-dev/briefs/%s.json" % (io.home, hashlib.sha256(str(cwd).encode("utf-8")).hexdigest()[:32])
 
 
-def brief_command(ctx, event):
+def brief_command(ctx, event, client):
     """`since hook session-start`: the project's brief, said at the start of each session, checked again once a day or when its files
     change."""
     io = ctx["io"]
@@ -475,7 +477,8 @@ def brief_command(ctx, event):
     except ValueError:
         pass
     before = json.dumps(cache, separators=(",", ":"), ensure_ascii=False)
-    output = session_start(ctx, event, cache, lambda body: call(ctx, "POST", "/v1/check", body=body, key=ctx["key"], timeout_ms=BRIEF_TIMEOUT_MS))
+    card = session_start(ctx, event, cache, lambda body: call(ctx, "POST", "/v1/check", body=body, key=ctx["key"], timeout_ms=BRIEF_TIMEOUT_MS))
+    output = brief_answer(client, card) if card else None
     if json.dumps(cache, separators=(",", ":"), ensure_ascii=False) != before:
         try:
             io.write_file(file, json.dumps(cache, separators=(",", ":"), ensure_ascii=False), 0o600)
@@ -513,8 +516,18 @@ def hook_command(ctx, name):
         return 0
     if not ctx["key"] or not isinstance(event, dict):
         return 0
+    client = ctx["args"]["flags"].get("client") or "claude"
+    # The agent's own event, as the hooks read it: one write, or each file a patch touched.
+    events = claude_events(client, event)
+    if not events:
+        return 0
+    event = events[0]
     if name == "session-start":
-        return brief_command(ctx, event)
+        return brief_command(ctx, event, client)
+    # Only Claude Code takes a finish note without going on: for the others the finish check runs only when the team chose to block, so no
+    # check is paid for that nobody would read.
+    if name == "stop" and client != "claude" and not ctx["args"]["flags"].get("block"):
+        return 0
     file = hook_state_path(io, event.get("session_id"))
     state = {"files": {}, "notes": []}
     try:
@@ -526,12 +539,14 @@ def hook_command(ctx, name):
     output = None
     if name == "stop":
         changed = changed_paths(io, event.get("cwd"))
-        output = stop_hook(ctx, event, state, lambda body: call(ctx, "POST", "/v1/check", body=body, key=ctx["key"], timeout_ms=STOP_TIMEOUT_MS), changed,
-                           block=bool(ctx["args"]["flags"].get("block")))
-    else:
-        note = post_tool_use(ctx, event, state, lambda body: call(ctx, "POST", "/v1/check", body=body, key=ctx["key"], timeout_ms=HOOK_TIMEOUT_MS))
+        note = stop_hook(ctx, event, state, lambda body: call(ctx, "POST", "/v1/check", body=body, key=ctx["key"], timeout_ms=STOP_TIMEOUT_MS), changed)
         if note:
-            output = {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": note}}
+            output = stop_answer(client, note, bool(ctx["args"]["flags"].get("block")))
+    else:
+        note = post_tool_use(ctx, events if len(events) > 1 else event, state,
+                             lambda body: call(ctx, "POST", "/v1/check", body=body, key=ctx["key"], timeout_ms=HOOK_TIMEOUT_MS))
+        if note:
+            output = write_answer(client, note)
     try:
         io.write_file(file, json.dumps(state, separators=(",", ":"), ensure_ascii=False), 0o600)
     except OSError:
@@ -957,6 +972,8 @@ def run(argv, io):
     elif command == "hook":
         if len(words) != 1:
             return usage("Too many words: %s" % words[1] if len(words) > 1 else "%s hook needs the hook's event, as %s hook post-tool-use" % (p, p))
+        if flags.get("client") is not None and flags.get("client") not in CLIENTS:
+            return usage("--client takes %s or %s." % (", ".join(CLIENTS[:-1]), CLIENTS[-1]))
     elif command is None or command == "check":
         if len(words) > 1:
             return usage("Too many words: %s" % words[1])

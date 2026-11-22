@@ -1,0 +1,6 @@
+$ since hook post-tool-use --client codex
+{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Since.dev checked what was just written and found:\n- src/llm.ts:3: replace gpt-3.5-turbo here with gpt-5.6-terra. gpt-3.5-turbo on OpenAI API: retirement 2026-10-23. Source: https://developers.openai.com/api/docs/deprecations\nFix each one before you go on."}}
+--- log
+POST /v1/check key {"detail":"summary","files":[{"content":"import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n","path":"src/llm.ts"}]}
+--- wrote /home/dev/.cache/since-dev/hooks/c1.json mode 600
+{"files":{"src/llm.ts":"0b81f3b5d1d268ff53e1f000ca47e420"},"notes":["22222222-2222-4222-8222-222222222222\u0000src/llm.ts\u00003"],"written":["src/llm.ts"]}--- exit 0

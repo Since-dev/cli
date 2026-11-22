@@ -1,0 +1,3 @@
+$ since hook stop --client cursor --block
+--- wrote /home/dev/.cache/since-dev/hooks/u2.json mode 600
+{"files":{},"notes":[]}--- exit 0

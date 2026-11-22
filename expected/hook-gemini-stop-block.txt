@@ -1,0 +1,6 @@
+$ since hook stop --client gemini --block
+{"decision":"deny","reason":"Since.dev checked the file changed in this session, and found:\n- src/llm.ts:3: replace gpt-3.5-turbo here with gpt-5.6-terra. gpt-3.5-turbo on OpenAI API: retirement 2026-10-23. Source: https://developers.openai.com/api/docs/deprecations\nFix each one before you go on."}
+--- log
+POST /v1/check key {"detail":"summary","files":[{"content":"import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n","path":"src/llm.ts"}]}
+--- wrote /home/dev/.cache/since-dev/hooks/g2.json mode 600
+{"files":{},"notes":["22222222-2222-4222-8222-222222222222\u0000src/llm.ts\u00003"],"finished":"445b90d20ee38654ee5ffea9de24b27f"}--- exit 0

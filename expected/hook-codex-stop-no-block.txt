@@ -1,0 +1,2 @@
+$ since hook stop --client codex
+--- exit 0

@@ -116,19 +116,28 @@ def _note_text(head, lines):
 
 
 def post_tool_use(ctx, event, state, check):
-    """The PostToolUse hook. `state` is the session's memory (each file's last checked text and the notes said). Returns the note for
-    the agent, or None to say nothing."""
+    """The PostToolUse hook. `state` is the session's memory (each file's last checked text and the notes said). A patch that touches
+    several files (Codex) is several writes, each checked as one, and one note says what they found. Returns the note for the agent, or
+    None to say nothing."""
+    notes = []
+    for one in event if isinstance(event, list) else [event]:
+        notes.extend(_write_notes(ctx, one, state, check))
+    return _note_text("Since.dev checked what was just written and found:", notes) if notes else None
+
+
+def _write_notes(ctx, event, state, check):
+    """One write's notes: the findings proven on the lines it wrote that this session has not been told."""
     wrote = written(event, ctx["io"].read_file)
     if not wrote or not wrote["content"].strip() or len(wrote["content"]) > MAX_CHARACTERS or not names_something(wrote["path"], wrote["content"]):
-        return None
+        return []
     seen = _hash(wrote["content"])
     if state["files"].get(wrote["path"]) == seen:
-        return None
+        return []
     # Every file written that names something, answered or not: the finish check reads them all.
     state["written"] = list(dict.fromkeys((state.get("written") or []) + [wrote["path"]]))
     answer = check({"files": [{"path": wrote["path"], "content": wrote["content"]}], "detail": "summary"})
     if answer["status"] != 200 or answer["json"] is None or not isinstance(answer["json"].get("findings"), list):
-        return None
+        return []
     state["files"][wrote["path"]] = seen
     notes = []
     for finding in answer["json"]["findings"]:
@@ -144,7 +153,7 @@ def post_tool_use(ctx, event, state, check):
                 continue
             state["notes"].append(key)
             notes.append(_note_of(finding, place, wrote["content"]))
-    return _note_text("Since.dev checked what was just written and found:", notes) if notes else None
+    return notes
 
 
 # -- The finish check (Stop) ---------------------------------------------------------------------------------------------------------
@@ -201,11 +210,10 @@ def finish_files(io, cwd, written_paths, changed):
     return out, sent
 
 
-def stop_hook(ctx, event, state, check, changed, block=False):
+def stop_hook(ctx, event, state, check, changed):
     """The Stop hook: when the agent finishes its turn, the whole change is checked as one set of files, and the agent is told what is
     proven in the files it changed that it has not been told already, with what was covered. Nothing when the change is unchanged since
-    the last finish check, clean, or Since is slow. `block` (the team's choice) makes the agent go on to fix it; otherwise the note waits
-    for it. Returns the hook's JSON output, or None."""
+    the last finish check, clean, or Since is slow. Returns the note, or None; the command words it as the agent takes it (clients.py)."""
     if not isinstance(event, dict) or event.get("stop_hook_active") is True:
         return None
     cwd = event.get("cwd").rstrip("/") if isinstance(event.get("cwd"), str) else None
@@ -239,8 +247,7 @@ def stop_hook(ctx, event, state, check, changed, block=False):
     one = len(sent) == 1
     covered = "%s changed in this session%s" % ("the file" if one else "the %d files" % len(sent),
                                                 " with the manifests and lockfiles beside %s" % ("it" if one else "them") if len(files) > len(sent) else "")
-    note = _note_text("Since.dev checked %s, and found:" % covered, notes)
-    return {"decision": "block", "reason": note} if block else {"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": note}}
+    return _note_text("Since.dev checked %s, and found:" % covered, notes)
 
 
 # -- The session brief (SessionStart) ------------------------------------------------------------------------------------------------
@@ -389,8 +396,8 @@ def brief_card(answer):
 
 def session_start(ctx, event, cache, check):
     """The SessionStart hook: a short card of what the project runs on and what ended or is ending there, from one check of its files a
-    day (sooner when those files changed); between checks the card is said again from the cache. Returns the hook's JSON output, or
-    None. `cache` is the stored brief for this project, updated in place."""
+    day (sooner when those files changed); between checks the card is said again from the cache. Returns the card, or None. `cache` is
+    the stored brief for this project, updated in place."""
     cwd = event.get("cwd").rstrip("/") if isinstance(event, dict) and isinstance(event.get("cwd"), str) else None
     if not cwd:
         return None
@@ -400,15 +407,12 @@ def session_start(ctx, event, cache, check):
     seen = _hash(json.dumps([[file["path"], _hash(file["content"])] for file in files], separators=(",", ":"), ensure_ascii=False))
     now = ctx["io"].now()
 
-    def say(card):
-        return {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": card}}
-
     if cache.get("seen") == seen and isinstance(cache.get("card"), str) and now - (cache.get("at") or 0) < BRIEF_DAY_MS:
-        return say(cache["card"])
+        return cache["card"]
     # The full answer: a summary counts what was checked, and the brief needs each package's version and latest.
     answer = check({"files": files, "detail": "full"})
     if answer["status"] != 200 or answer["json"] is None or not isinstance(answer["json"].get("findings"), list):
         return None
     card = brief_card(answer["json"])
     cache.update({"seen": seen, "at": now, "card": card})
-    return say(card)
+    return card

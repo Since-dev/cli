@@ -1,0 +1,24 @@
+{
+  "args": [
+    "hook",
+    "stop",
+    "--client",
+    "codex"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-22T04:00:00.000Z",
+  "files": {
+    "src/llm.ts": "import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n"
+  },
+  "changed": [
+    "src/llm.ts"
+  ],
+  "stdin": {
+    "session_id": "c2",
+    "cwd": "/repo",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  }
+}

@@ -98,15 +98,27 @@ const hash = (text) => createHash("sha256").update(text).digest("hex").slice(0, 
  * caller. Returns the note for the agent, or null to say nothing.
  */
 export async function postToolUse(ctx, event, state, check) {
+  // A patch that touches several files (Codex) is several writes, each checked as one, and one note says what they found.
+  if (Array.isArray(event)) {
+    const notes = []
+    for (const one of event) notes.push(...(await writeNotes(ctx, one, state, check)))
+    return notes.length ? noteText("Since.dev checked what was just written and found:", notes) : null
+  }
+  const notes = await writeNotes(ctx, event, state, check)
+  return notes.length ? noteText("Since.dev checked what was just written and found:", notes) : null
+}
+
+/** One write's notes: the findings proven on the lines it wrote that this session has not been told. */
+async function writeNotes(ctx, event, state, check) {
   const wrote = written(event, (file) => ctx.io.readFile(file))
-  if (!wrote || !wrote.content.trim() || wrote.content.length > MAX_CHARACTERS || !namesSomething(wrote.path, wrote.content)) return null
+  if (!wrote || !wrote.content.trim() || wrote.content.length > MAX_CHARACTERS || !namesSomething(wrote.path, wrote.content)) return []
   const seen = hash(wrote.content)
-  if (state.files[wrote.path] === seen) return null
+  if (state.files[wrote.path] === seen) return []
   // Every file written that names something, answered or not: the finish check reads them all.
   state.written = [...new Set([...(state.written ?? []), wrote.path])]
   const answer = await check({ files: [{ path: wrote.path, content: wrote.content }], detail: "summary" })
   // Slow, unreachable or refused: silent, and the file is checked again at its next write or at the finish check.
-  if (answer.status !== 200 || !answer.json || !Array.isArray(answer.json.findings)) return null
+  if (answer.status !== 200 || !answer.json || !Array.isArray(answer.json.findings)) return []
   state.files[wrote.path] = seen
   const notes = []
   for (const finding of answer.json.findings) {
@@ -120,7 +132,7 @@ export async function postToolUse(ctx, event, state, check) {
       notes.push(noteOf(finding, place, wrote.content))
     }
   }
-  return notes.length ? noteText("Since.dev checked what was just written and found:", notes) : null
+  return notes
 }
 
 // ── The finish check (Stop) ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -174,10 +186,9 @@ export function finishFiles(io, cwd, written, changed) {
 /**
  * The Stop hook: when the agent finishes its turn, the whole change is checked as one set of files, and the agent is told what is proven
  * in the files it changed that it has not been told already, with what was covered. Nothing when the change is unchanged since the last
- * finish check, clean, or Since is slow. `block` (the team's choice) makes the agent go on to fix it; otherwise the note waits for it.
- * Returns the hook's JSON output, or null.
+ * finish check, clean, or Since is slow. Returns the note, or null; the command words it as the agent takes it (src/clients.mjs).
  */
-export async function stopHook(ctx, event, state, check, changed, { block = false } = {}) {
+export async function stopHook(ctx, event, state, check, changed) {
   // Claude Code is already going on because of a Stop hook: never a second round.
   if (!event || event.stop_hook_active === true) return null
   const cwd = typeof event.cwd === "string" ? event.cwd.replace(/\/+$/, "") : null
@@ -204,8 +215,7 @@ export async function stopHook(ctx, event, state, check, changed, { block = fals
   if (!notes.length) return null
   const one = sent.length === 1
   const covered = `${one ? "the file" : `the ${sent.length} files`} changed in this session${files.length > sent.length ? ` with the manifests and lockfiles beside ${one ? "it" : "them"}` : ""}`
-  const note = noteText(`Since.dev checked ${covered}, and found:`, notes)
-  return block ? { decision: "block", reason: note } : { hookSpecificOutput: { hookEventName: "Stop", additionalContext: note } }
+  return noteText(`Since.dev checked ${covered}, and found:`, notes)
 }
 
 // ── The session brief (SessionStart) ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -308,8 +318,8 @@ export function briefCard(answer) {
 
 /**
  * The SessionStart hook: a short card of what the project runs on and what ended or is ending there, from one check of its files a
- * day (sooner when those files changed); between checks the card is said again from the cache. Returns the hook's JSON output, or
- * null. `cache` is the stored brief for this project, updated in place.
+ * day (sooner when those files changed); between checks the card is said again from the cache. Returns the card, or null. `cache` is
+ * the stored brief for this project, updated in place.
  */
 export async function sessionStart(ctx, event, cache, check) {
   const cwd = event && typeof event.cwd === "string" ? event.cwd.replace(/\/+$/, "") : null
@@ -318,12 +328,11 @@ export async function sessionStart(ctx, event, cache, check) {
   if (!files.length) return null
   const seen = hash(JSON.stringify(files.map((file) => [file.path, hash(file.content)])))
   const now = ctx.io.now()
-  const say = (card) => ({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: card } })
-  if (cache.seen === seen && typeof cache.card === "string" && now - (cache.at ?? 0) < BRIEF_DAY_MS) return say(cache.card)
+  if (cache.seen === seen && typeof cache.card === "string" && now - (cache.at ?? 0) < BRIEF_DAY_MS) return cache.card
   // The full answer: a summary counts what was checked, and the brief needs each package's version and latest.
   const answer = await check({ files, detail: "full" })
   if (answer.status !== 200 || !answer.json || !Array.isArray(answer.json.findings)) return null
   const card = briefCard(answer.json)
   Object.assign(cache, { seen, at: now, card })
-  return say(card)
+  return card
 }
