@@ -75,13 +75,44 @@ def _hash(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:32]
 
 
-def _note_of(finding, place):
-    reason = re.sub(r"\.?$", ".", str(finding.get("reason") or "").strip(), count=1)
-    replacement = finding.get("replacement")
-    use = " Use %s." % replacement if replacement and str(replacement).lower() not in reason.lower() else ""
+def _written_id(line, name):
+    """The quoted string on a line that is the model id the check names, or the alias or prefix it stands for; None when there is none."""
+    wanted = str(name).lower()
+    for match in re.finditer(r"[\"'`]([^\"'`\s]{3,})[\"'`]", line):
+        value = match.group(1)
+        lower = value.lower()
+        if lower == wanted or wanted.startswith(lower + "-") or wanted.startswith(lower + "@") or wanted.endswith("/" + lower) or lower.endswith(wanted):
+            return value
+    return None
+
+
+def _note_of(finding, place, content=None):
+    """One note a line: the place, then what to do when the answer names a replacement (first, so it reads as the instruction it is,
+    with a model id as the line writes it), then why in the check's own words, shortened, then the line to write and the source."""
+    said = re.sub(r"^Names a model this change affects\.\s*", "", str(finding.get("reason") or "").strip())
+    said = re.sub(r"\s*Moving to \S+ is more than a new id:[\s\S]*$", "", said)
+    reason = re.sub(r"\.?$", ".", said, count=1)
+    surface = finding.get("surface") if isinstance(finding.get("surface"), dict) else {}
+    name = surface.get("name") or ""
+    line_no = place.get("line") if isinstance(place.get("line"), int) and not isinstance(place.get("line"), bool) else None
+    if surface.get("kind") == "model":
+        lines = content.split("\n") if isinstance(content, str) else []
+        written = _written_id(lines[line_no - 1], name) if line_no and 0 < line_no <= len(lines) else None
+        subject = "%s here" % written if written else "the model id here (%s)" % name
+    else:
+        subject = " ".join(part for part in [name, finding.get("version")] if part)
+    lead = "replace %s with %s. " % (subject, finding["replacement"]) if finding.get("replacement") and name else ""
     edit = finding.get("edit") if isinstance(finding.get("edit"), dict) else {}
     write = " Write: %s" % edit["to"].strip() if isinstance(edit.get("to"), str) and edit["to"].strip() else ""
-    return "%s:%s: %s%s%s" % (place["file"], place["line"], reason, use, write)
+    source = finding.get("source")
+    url = source if isinstance(source, str) else source.get("url") if isinstance(source, dict) and isinstance(source.get("url"), str) else None
+    return "%s%s: %s%s%s%s" % (place["file"], ":%s" % line_no if line_no else "", lead, reason, write, " Source: %s" % url if url else "")
+
+
+
+def _note_text(head, lines):
+    """The note as the agent reads it: what was checked, one line a finding, and the ask to fix them."""
+    return "%s\n%s\nFix each one before you go on." % (head, "\n".join("- %s" % line for line in lines))
 
 
 def post_tool_use(ctx, event, state, check):
@@ -112,8 +143,8 @@ def post_tool_use(ctx, event, state, check):
             if key in state["notes"]:
                 continue
             state["notes"].append(key)
-            notes.append(_note_of(finding, place))
-    return "Since.dev checked what was just written and found:\n%s" % "\n".join("- %s" % note for note in notes) if notes else None
+            notes.append(_note_of(finding, place, wrote["content"]))
+    return _note_text("Since.dev checked what was just written and found:", notes) if notes else None
 
 
 # -- The finish check (Stop) ---------------------------------------------------------------------------------------------------------
@@ -202,13 +233,13 @@ def stop_hook(ctx, event, state, check, changed, block=False):
             if key in state["notes"]:
                 continue
             state["notes"].append(key)
-            notes.append(_note_of(finding, place))
+            notes.append(_note_of(finding, place, next((file["content"] for file in files if file["path"] == place["file"]), None)))
     if not notes:
         return None
     one = len(sent) == 1
     covered = "%s changed in this session%s" % ("the file" if one else "the %d files" % len(sent),
                                                 " with the manifests and lockfiles beside %s" % ("it" if one else "them") if len(files) > len(sent) else "")
-    note = "Since.dev checked %s, and found:\n%s" % (covered, "\n".join("- %s" % line for line in notes))
+    note = _note_text("Since.dev checked %s, and found:" % covered, notes)
     return {"decision": "block", "reason": note} if block else {"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": note}}
 
 

@@ -58,13 +58,38 @@ export function written(event, readFile) {
   return { path, content, lines }
 }
 
-/** One note a line: the place, what ended or changed, and what to write when the answer gives it. */
-function noteOf(finding, place) {
-  const reason = String(finding.reason ?? "").trim().replace(/\.?$/, ".")
-  const replacement = finding.replacement && !reason.toLowerCase().includes(String(finding.replacement).toLowerCase()) ? ` Use ${finding.replacement}.` : ""
+/**
+ * One note a line: the place, then what to do when the answer names a replacement (first, so it reads as the instruction it is: on the
+ * benchmark a note that ended on "12 things work differently there" left the old model in place), then why, then the line to write.
+ */
+export function noteOf(finding, place, content = null) {
+  // The check's own words, shortened for a note: no opener the place already says, and the replacement's differences left for a check.
+  const reason = String(finding.reason ?? "").trim().replace(/^Names a model this change affects\.\s*/, "").replace(/\s*Moving to \S+ is more than a new id:[\s\S]*$/, "").replace(/\.?$/, ".")
+  const name = finding.surface?.name ?? ""
+  const model = finding.surface?.kind === "model"
+  // A model id as the line writes it (an alias, or another spelling of the id the check names), so the agent finds it: a model told to
+  // replace an id its file does not hold left it in place (the benchmark's hook arm, Nov 22, 2026).
+  const written = model && content && typeof place.line === "number" ? writtenId(content.split("\n")[place.line - 1] ?? "", name) : null
+  const subject = model ? (written ? `${written} here` : `the model id here (${name})`) : [name, finding.version].filter(Boolean).join(" ")
+  const lead = finding.replacement && name ? `replace ${subject} with ${finding.replacement}. ` : ""
   const edit = finding.edit && typeof finding.edit.to === "string" && finding.edit.to.trim() ? ` Write: ${finding.edit.to.trim()}` : ""
-  return `${place.file}:${place.line}: ${reason}${replacement}${edit}`
+  const url = typeof finding.source === "string" ? finding.source : typeof finding.source?.url === "string" ? finding.source.url : null
+  return `${place.file}${typeof place.line === "number" ? `:${place.line}` : ""}: ${lead}${reason}${edit}${url ? ` Source: ${url}` : ""}`
 }
+
+/** The quoted string on a line that is the model id the check names, or the alias or prefix it stands for; null when there is none. */
+export function writtenId(line, name) {
+  const wanted = String(name).toLowerCase()
+  for (const match of line.matchAll(/["'`]([^"'`\s]{3,})["'`]/g)) {
+    const value = match[1]
+    const lower = value.toLowerCase()
+    if (lower === wanted || wanted.startsWith(`${lower}-`) || wanted.startsWith(`${lower}@`) || wanted.endsWith(`/${lower}`) || lower.endsWith(wanted)) return value
+  }
+  return null
+}
+
+/** The note as the agent reads it: what was checked, one line a finding, and the ask to fix them. */
+const noteText = (head, lines) => `${head}\n${lines.map((line) => `- ${line}`).join("\n")}\nFix each one before you go on.`
 
 const hash = (text) => createHash("sha256").update(text).digest("hex").slice(0, 32)
 
@@ -92,10 +117,10 @@ export async function postToolUse(ctx, event, state, check) {
       const key = `${finding.changeId ?? finding.reason}\u0000${place.file}\u0000${place.line}`
       if (state.notes.includes(key)) continue
       state.notes.push(key)
-      notes.push(noteOf(finding, place))
+      notes.push(noteOf(finding, place, wrote.content))
     }
   }
-  return notes.length ? `Since.dev checked what was just written and found:\n${notes.map((note) => `- ${note}`).join("\n")}` : null
+  return notes.length ? noteText("Since.dev checked what was just written and found:", notes) : null
 }
 
 // ── The finish check (Stop) ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -173,13 +198,13 @@ export async function stopHook(ctx, event, state, check, changed, { block = fals
       const key = `${finding.changeId ?? finding.reason}\u0000${place.file}\u0000${place.line}`
       if (state.notes.includes(key)) continue
       state.notes.push(key)
-      notes.push(noteOf(finding, place))
+      notes.push(noteOf(finding, place, files.find((file) => file.path === place.file)?.content ?? null))
     }
   }
   if (!notes.length) return null
   const one = sent.length === 1
   const covered = `${one ? "the file" : `the ${sent.length} files`} changed in this session${files.length > sent.length ? ` with the manifests and lockfiles beside ${one ? "it" : "them"}` : ""}`
-  const note = `Since.dev checked ${covered}, and found:\n${notes.map((line) => `- ${line}`).join("\n")}`
+  const note = noteText(`Since.dev checked ${covered}, and found:`, notes)
   return block ? { decision: "block", reason: note } : { hookSpecificOutput: { hookEventName: "Stop", additionalContext: note } }
 }
 

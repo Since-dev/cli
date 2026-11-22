@@ -1,5 +1,5 @@
 $ since hook stop
-{"hookSpecificOutput":{"hookEventName":"Stop","additionalContext":"Since.dev checked the file changed in this session with the manifests and lockfiles beside it, and found:\n- src/llm.ts:3: gpt-3.5-turbo on OpenAI API: retirement 2026-10-23. Use gpt-5.6-terra."}}
+{"hookSpecificOutput":{"hookEventName":"Stop","additionalContext":"Since.dev checked the file changed in this session with the manifests and lockfiles beside it, and found:\n- src/llm.ts:3: replace gpt-3.5-turbo here with gpt-5.6-terra. gpt-3.5-turbo on OpenAI API: retirement 2026-10-23.\nFix each one before you go on."}}
 --- log
 POST /v1/check key {"detail":"summary","files":[{"content":"import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n","path":"src/llm.ts"},{"content":"{\n  \"name\": \"app\",\n  \"dependencies\": { \"openai\": \"^4.20.0\" }\n}\n","path":"package.json"},{"content":"{\n  \"name\": \"app\",\n  \"lockfileVersion\": 3,\n  \"packages\": {}\n}\n","path":"package-lock.json"}]}
 --- wrote /home/dev/.cache/since-dev/hooks/s2.json mode 600
