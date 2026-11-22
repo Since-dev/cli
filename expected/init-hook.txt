@@ -109,7 +109,7 @@ Skip it for code that uses no package, model, API or runtime, for general progra
           {
             "type": "command",
             "command": "since hook post-tool-use",
-            "timeout": 5
+            "timeout": 10
           }
         ]
       }

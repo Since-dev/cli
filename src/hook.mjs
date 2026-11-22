@@ -1,15 +1,16 @@
 // The write-time hook (Feature 5): Claude Code runs `since hook post-tool-use` after each file its agent writes. It checks the file as
 // it now stands, as one set of files, and tells the agent only what is proven on the lines it just wrote, in a short note. A file that
 // names no model, version, runtime or package is never sent, nor one unchanged since its last check, and the same note is never said
-// twice in a session. It answers within three seconds or stays silent: a slow or unreachable Since never holds the agent up longer.
+// twice in a session. It answers within six seconds or stays silent: a slow or unreachable Since never holds the agent up longer.
 
 import { createHash } from "node:crypto"
 
 /**
- * How long the hook waits for Since: past it, nothing is said and the agent goes on. A file whose model id was just written is read
- * closely by a model before Since answers (about a second on its own), so the wait is three seconds, not one.
+ * How long the hook waits for Since: past it, nothing is said and the agent goes on (the finish check says it later). A model id just
+ * written is read closely by a model before Since answers: about 3 seconds in all in production (Nov 22, 2026), against 0.4 to 1.2 s
+ * for any other file, so the wait is six seconds.
  */
-export const HOOK_TIMEOUT_MS = 3000
+export const HOOK_TIMEOUT_MS = 6000
 /** The largest file the hook sends: the API's own limit on a set of files. */
 const MAX_CHARACTERS = 500_000
 

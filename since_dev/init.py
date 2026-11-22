@@ -112,7 +112,7 @@ WORDS = {
 HOOK_FILE = ".claude/settings.local.json"
 """Where Claude Code reads one person's own settings for a project: never committed, so the hook is theirs alone."""
 HOOK_MATCHER = "Write|Edit|MultiEdit"
-HOOK_TIMEOUT_SECONDS = 5
+HOOK_TIMEOUT_SECONDS = 10
 STOP_TIMEOUT_SECONDS = 15
 # The hooks Since adds: after each write, and when the agent finishes its turn (Stop takes no matcher).
 HOOKS = [

@@ -84,8 +84,8 @@ export function mergeWhole(text, whole) {
 export const HOOK_FILE = ".claude/settings.local.json"
 /** Claude Code's tools that write a file, as its hooks' matcher names them. */
 const HOOK_MATCHER = "Write|Edit|MultiEdit"
-/** Seconds Claude Code gives each hook before it moves on; each stays silent past its own wait (3 s after a write, 10 s at the finish). */
-const HOOK_TIMEOUT_SECONDS = 5
+/** Seconds Claude Code gives each hook before it moves on; each stays silent past its own wait (6 s after a write, 10 s at the finish). */
+const HOOK_TIMEOUT_SECONDS = 10
 const STOP_TIMEOUT_SECONDS = 15
 /** The hooks Since adds: after each write, and when the agent finishes its turn (Stop takes no matcher). */
 const HOOKS = [

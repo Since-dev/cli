@@ -9,7 +9,7 @@ import { MAX_CHARACTERS, checkBody, fileSets, filesToSend, findManifests, isLock
 import { HOOK_TIMEOUT_MS, postToolUse, STOP_TIMEOUT_MS, stopHook } from "./hook.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.5.0"
+export const VERSION = "0.5.1"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
