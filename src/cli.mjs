@@ -4,17 +4,18 @@
 // Exit codes: 0 done. `check`: 1 when a finding fails, 2 when the caller has something to fix, 0 when Since could not be
 // reached (an outage never fails a build). Every other command: 1 when it could not finish, 2 for a usage error.
 
+import { createHash } from "node:crypto"
 import { init } from "./init.mjs"
-import { MAX_CHARACTERS, checkBody, fileSets, filesToSend, findManifests, isLockfile, parseRepo } from "./local.mjs"
-import { HOOK_TIMEOUT_MS, postToolUse, STOP_TIMEOUT_MS, stopHook } from "./hook.mjs"
+import { MAX_CHARACTERS, MAX_SET_FILES, checkBody, fileSets, filesToSend, findManifests, isLockfile, parseRepo } from "./local.mjs"
+import { BRIEF_TIMEOUT_MS, HOOK_TIMEOUT_MS, namesSomething, nearestDeclarations, postToolUse, sessionStart, STOP_TIMEOUT_MS, stopHook } from "./hook.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.5.1"
+export const VERSION = "0.6.0"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
 const COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "hook", "help", "version"]
-const SWITCHES = ["all", "json", "local", "watch", "dry-run", "yes", "hook", "block", "no-color", "help", "version"]
+const SWITCHES = ["all", "json", "local", "watch", "staged", "dry-run", "yes", "hook", "pre-commit", "block", "no-color", "help", "version"]
 const OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files"]
 const FAIL_ON = ["low", "medium", "high", "critical", "none"]
 const MAX_PAGES = 10
@@ -61,6 +62,7 @@ function help(p) {
     [" watches remove <id>", "stop watching one"],
     [" hook post-tool-use", "run by your coding agent after each write: what it wrote, checked"],
     [" hook stop", "run by your coding agent when it finishes: the whole change, checked"],
+    [" hook session-start", "run by your coding agent as a session starts: this project's brief"],
   ]
   const options = [
     ["--all", "show every finding"],
@@ -78,6 +80,8 @@ function help(p) {
     ["--yes", "init: write without asking"],
     ["--hook", "init: also add the write-time hooks for Claude Code, for you only"],
     ["--block", "hook stop: the agent fixes what is found before it stops"],
+    ["--pre-commit", "init: also add a git pre-commit hook that runs check --staged"],
+    ["--staged", "check: only what git has staged, for a pre-commit hook"],
     ["--max-files <n>", "how many manifests and lockfiles to send (default 50)"],
     ["--no-color", "plain text"],
   ]
@@ -305,6 +309,52 @@ async function localCheck(ctx, noOrigin) {
   return report(ctx, { kind: "local", files, notes })
 }
 
+/**
+ * `since check --staged`, for a git pre-commit hook: the staged files that name a model, a version, a runtime or a package, as git has
+ * staged them, with the manifests and lockfiles nearest them, checked as one set. Only findings in the staged files count, so a commit
+ * is never held for what it did not touch.
+ */
+async function stagedCheck(ctx) {
+  const { io, p, check } = ctx
+  if (!ctx.key) {
+    io.err(`Checking staged files needs a key. Sign in first: ${p} login\n`)
+    return check ? 2 : 1
+  }
+  const root = (io.root() ?? io.cwd).replace(/\/+$/, "")
+  const staged = (io.staged?.() ?? []).filter((path) => !path.split("/").some((part) => part === "node_modules" || part === ".git"))
+  const read = (path) => (staged.includes(path) ? io.stagedFile(path) : io.readFile(`${root}/${path}`))
+  const named = []
+  for (const path of staged) {
+    const content = read(path)
+    if (content !== null && content.trim() && content.length <= MAX_CHARACTERS && namesSomething(path, content)) named.push({ path, content })
+  }
+  if (!named.length) {
+    io.out("Nothing staged names a model, a version, a runtime or a package.\n")
+    return 0
+  }
+  const files = []
+  let size = 0
+  const add = (file) => {
+    if (files.length >= MAX_SET_FILES || files.some((other) => other.path === file.path) || size + file.content.length > MAX_CHARACTERS) return
+    files.push(file)
+    size += file.content.length
+  }
+  for (const file of named) add(file)
+  const notes = named.length > files.length ? [`${text.plural(named.length, "staged file")} name something; the first ${files.length} were checked.`] : []
+  for (const file of named) {
+    for (const path of nearestDeclarations(io, root, file.path)) {
+      const content = read(path)
+      if (content !== null && content.trim()) add({ path, content })
+    }
+  }
+  const answer = await checkAll(ctx, { files, detail: "summary" })
+  if (answer.status !== 200 || !answer.json || !Array.isArray(answer.json.findings)) return refuse(ctx, answer)
+  const mine = new Set(named.map((file) => file.path))
+  const findings = answer.json.findings.filter((finding) => (Array.isArray(finding.where) ? finding.where : []).some((place) => mine.has(place?.file)))
+  const kept = { ...answer.json, findings }
+  return report(ctx, { kind: "local", staged: true, files: [{ path: null, answer: kept }], drafts: [{ files: files.map((file) => file.path), answer: kept }], notes })
+}
+
 /** The folder's manifests and the lockfiles beside them, in sets of files. */
 async function localSets(ctx, found) {
   const { io } = ctx
@@ -336,7 +386,6 @@ async function localSets(ctx, found) {
   return report(ctx, { kind: "local", files: drafts.map((draft) => ({ path: null, answer: draft.answer })), drafts, notes })
 }
 
-/** A hook event's session file: what this session's hook checked and said, kept a day. */
 /** The files git shows changed or new under the project folder, as paths inside it. */
 function changedPaths(io, cwd) {
   if (typeof cwd !== "string" || !io.changed) return []
@@ -348,6 +397,30 @@ function changedPaths(io, cwd) {
   })
 }
 
+/** Where a project's brief is kept between sessions: by its folder, never its contents. */
+const briefPath = (io, cwd) => `${io.home}/.cache/since-dev/briefs/${createHash("sha256").update(String(cwd)).digest("hex").slice(0, 32)}.json`
+
+/** `since hook session-start`: the project's brief, said at the start of each session, checked again once a day or when its files change. */
+async function briefCommand(ctx, event) {
+  const { io } = ctx
+  const file = briefPath(io, event.cwd)
+  let cache = {}
+  try {
+    const saved = JSON.parse(io.readFile(file) ?? "null")
+    if (saved && typeof saved === "object" && !Array.isArray(saved)) cache = saved
+  } catch {}
+  const before = JSON.stringify(cache)
+  const output = await sessionStart(ctx, event, cache, (body) => call(ctx, "POST", "/v1/check", { body, key: ctx.key, timeoutMs: BRIEF_TIMEOUT_MS }))
+  if (JSON.stringify(cache) !== before) {
+    try {
+      io.writeFile(file, JSON.stringify(cache), 0o600)
+    } catch {}
+  }
+  if (output) io.out(`${JSON.stringify(output)}\n`)
+  return 0
+}
+
+/** A hook event's session file: what this session's hook checked and said, kept a day. */
 const hookStatePath = (io, session) => `${io.home}/.cache/since-dev/hooks/${String(session).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 80) || "session"}.json`
 
 /**
@@ -356,8 +429,8 @@ const hookStatePath = (io, session) => `${io.home}/.cache/since-dev/hooks/${Stri
  */
 async function hookCommand(ctx, name) {
   const { io } = ctx
-  if (name !== "post-tool-use" && name !== "stop") {
-    io.err(`${ctx.p} hook takes post-tool-use or stop.\n`)
+  if (name !== "post-tool-use" && name !== "stop" && name !== "session-start") {
+    io.err(`${ctx.p} hook takes post-tool-use, stop or session-start.\n`)
     return 0
   }
   let event = null
@@ -367,6 +440,7 @@ async function hookCommand(ctx, name) {
     return 0
   }
   if (!ctx.key || !event || typeof event !== "object") return 0
+  if (name === "session-start") return briefCommand(ctx, event)
   const file = hookStatePath(io, event.session_id)
   let state = { files: {}, notes: [] }
   try {
@@ -437,7 +511,7 @@ function report(ctx, data) {
     const checked = data.files.reduce((sum, file) => sum + (wholeNumber(file.answer.checkedCount) ?? 0), 0)
     // Sets of files count the files sent; watched manifests, the manifests.
     const sent = data.drafts ? text.plural(data.drafts.reduce((sum, draft) => sum + draft.files.length, 0), "file") : text.plural(data.files.length, "manifest")
-    lines.push(`  ${[c.bold("This folder"), `${sent} checked`, currentAsOf(io, answerAsOf(data.files.map((file) => file.answer)))].filter(Boolean).join("  ")}`)
+    lines.push(`  ${[c.bold(data.staged ? "Staged" : "This folder"), `${sent} checked`, currentAsOf(io, answerAsOf(data.files.map((file) => file.answer)))].filter(Boolean).join("  ")}`)
     lines.push(`  ${counts}   ${text.num(checked)} checked`)
     for (const note of data.notes) notes.push(note)
     // A file --watch could not watch says why, as the answer words it.
@@ -445,7 +519,8 @@ function report(ctx, data) {
       if (isObject(file.answer.watch) && file.answer.watch.status !== "watching") notes.push(`${file.path}: ${file.answer.watch.message}`)
     }
     for (const note of text.answerNotes(data.files.map((file) => file.answer))) notes.push(note)
-    notes.push(`Only ${data.drafts ? "manifests and lockfiles" : "manifests"} were checked. Connect the repository to check its code too: ${APP}?utm_source=cli`)
+    // A staged check reads the code it stages: the note is for the manifests-only checks.
+    if (!data.staged) notes.push(`Only ${data.drafts ? "manifests and lockfiles" : "manifests"} were checked. Connect the repository to check its code too: ${APP}?utm_source=cli`)
   }
   lines.push("")
   for (const line of text.findingLines(items, all, c, more)) lines.push(line)
@@ -506,6 +581,13 @@ async function repoCommand(ctx) {
   if (!fromTree && args.flags.local) {
     io.err("--local checks the folder you are in, so it takes no repository name.\n")
     return 2
+  }
+  if (args.flags.staged) {
+    if (!fromTree || args.flags.watch) {
+      io.err(`--staged checks what git has staged in the folder you are in, so it takes ${args.flags.watch ? "no --watch" : "no repository name"}.\n`)
+      return 2
+    }
+    return stagedCheck(ctx)
   }
   // A watch keeps what the manifests here hold, read from this folder: a connected repository is watched already, by connecting it.
   if (args.flags.watch) {
@@ -768,7 +850,7 @@ export async function run(argv, io) {
   if (command === "hook") return hookCommand(ctx, words[0])
   if (command === "calendar") return calendarCommand(ctx)
   if (command === "changed") return changedCommand(ctx)
-  if (command === "init") return init(io, p, { dryRun: Boolean(args.flags["dry-run"]), yes: Boolean(args.flags.yes), hook: Boolean(args.flags.hook) })
+  if (command === "init") return init(io, p, { dryRun: Boolean(args.flags["dry-run"]), yes: Boolean(args.flags.yes), hook: Boolean(args.flags.hook), preCommit: Boolean(args.flags["pre-commit"]) })
   if (command === "login") return loginCommand(ctx)
   if (command === "logout") return logoutCommand(ctx)
   if (command === "watches") return words.length ? removeWatchCommand(ctx, words[1]) : watchesCommand(ctx)

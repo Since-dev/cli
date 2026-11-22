@@ -1,0 +1,3 @@
+$ since check --staged
+Nothing staged names a model, a version, a runtime or a package.
+--- exit 0

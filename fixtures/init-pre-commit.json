@@ -1,0 +1,11 @@
+{
+  "args": [
+    "init",
+    "--yes",
+    "--pre-commit"
+  ],
+  "now": "2026-11-22T03:00:00.000Z",
+  "files": {
+    "package.json": "{\n  \"name\": \"app\",\n  \"dependencies\": { \"express\": \"4.19.2\" }\n}\n"
+  }
+}

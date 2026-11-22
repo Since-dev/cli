@@ -87,10 +87,12 @@ const HOOK_MATCHER = "Write|Edit|MultiEdit"
 /** Seconds Claude Code gives each hook before it moves on; each stays silent past its own wait (6 s after a write, 10 s at the finish). */
 const HOOK_TIMEOUT_SECONDS = 10
 const STOP_TIMEOUT_SECONDS = 15
-/** The hooks Since adds: after each write, and when the agent finishes its turn (Stop takes no matcher). */
+const BRIEF_TIMEOUT_SECONDS = 20
+/** The hooks Since adds: after each write, when the agent finishes its turn, and as a session starts (neither takes a matcher here). */
 const HOOKS = [
   { event: "PostToolUse", word: "post-tool-use", entry: (command) => ({ matcher: HOOK_MATCHER, hooks: [{ type: "command", command, timeout: HOOK_TIMEOUT_SECONDS }] }) },
   { event: "Stop", word: "stop", entry: (command) => ({ hooks: [{ type: "command", command, timeout: STOP_TIMEOUT_SECONDS }] }) },
+  { event: "SessionStart", word: "session-start", entry: (command) => ({ hooks: [{ type: "command", command, timeout: BRIEF_TIMEOUT_SECONDS }] }) },
 ]
 
 /**
@@ -140,10 +142,10 @@ async function offerHook(io, program, { dryRun, yes, hook }) {
   const say = (lines) => io.out(`${lines.join("\n")}\n`)
   if (result.status === "same") return
   if (result.status === "skipped") return say([`  ${HOOK_FILE} is not plain JSON, so the write-time hook was not added.`, ""])
-  const what = [`  ${WORDS[result.status][hook && !dryRun ? 0 : 1].padEnd(14)}${HOOK_FILE}  Claude Code checks each file it writes, and the whole change when it finishes (yours only, not committed)`, ""]
+  const what = [`  ${WORDS[result.status][hook && !dryRun ? 0 : 1].padEnd(14)}${HOOK_FILE}  Claude Code checks each file it writes and the whole change when it finishes, and starts with a brief (yours only, not committed)`, ""]
   if (hook && !dryRun) {
     io.writeFile(`${root}/${HOOK_FILE}`, result.text, null)
-    return say([...what, "  Claude Code now sends each file it writes that names a model, a version, a runtime or a package to Since, and tells its agent", "  what is proven on the lines it wrote; when it finishes, the files it changed are checked together. No file is stored."])
+    return say([...what, "  Claude Code now sends each file it writes that names a model, a version, a runtime or a package to Since, and tells its agent", "  what is proven on the lines it wrote; when it finishes, the files it changed are checked together, and each session starts", "  with a short brief of what the project runs on. No file is stored."])
   }
   if (dryRun || yes || !io.tty) return
   say(["  Since can also check each file Claude Code writes, the moment it writes it, and the whole change when it finishes: the files", "  are sent to Since and not stored, and the agent hears only what is proven in what it wrote.", ...what])
@@ -152,10 +154,42 @@ async function offerHook(io, program, { dryRun, yes, hook }) {
   say(["  Added. Remove it from that file to stop."])
 }
 
-export async function init(io, program, { dryRun = false, yes = false, hook = false } = {}) {
+export async function init(io, program, { dryRun = false, yes = false, hook = false, preCommit = false } = {}) {
   const code = await initFiles(io, program, { dryRun, yes })
   await offerHook(io, program, { dryRun, yes, hook })
+  await offerPreCommit(io, program, { dryRun, yes, preCommit })
   return code
+}
+
+/** The git pre-commit hook `since init` writes: it checks what the commit stages, and nothing else. */
+export const preCommitHook = (program) => `#!/bin/sh\n# Since.dev (since init --pre-commit): checks what this commit stages. Remove this file to stop.\nexec ${program} check --staged\n`
+const OUR_PRE_COMMIT = /\bcheck --staged\b/
+
+/**
+ * A git pre-commit hook for the person, apart from the team's files: written only after its own yes (`--pre-commit`, or the answer to its
+ * question), and never over a pre-commit hook that is already there, whose owner is told the one line to add instead.
+ */
+async function offerPreCommit(io, program, { dryRun, yes, preCommit }) {
+  const file = io.gitPath ? io.gitPath("hooks/pre-commit") : null
+  const say = (lines) => io.out(`${lines.join("\n")}\n`)
+  if (!file) return preCommit ? say(["  This folder is not a git repository, so no pre-commit hook was added."]) : undefined
+  const existing = io.readFile(file)
+  if (existing !== null && OUR_PRE_COMMIT.test(existing)) return
+  const shown = file.startsWith(`${io.root()}/`) ? file.slice(io.root().length + 1) : file
+  if (existing !== null) {
+    if (preCommit || (!dryRun && !yes && io.tty)) say([`  ${shown} is your own, so it was left alone. To check each commit, add this line to it:`, `    ${program} check --staged`])
+    return
+  }
+  const what = [`  ${(preCommit && !dryRun ? "Wrote" : "Would write").padEnd(14)}${shown}  git checks what each commit stages (yours only, not committed)`, ""]
+  if (preCommit && !dryRun) {
+    io.writeFile(file, preCommitHook(program), 0o755)
+    return say([...what, "  Each commit now sends the staged files that name a model, a version, a runtime or a package to Since, and stops only for a", "  proven finding in them at high or above. No file is stored."])
+  }
+  if (dryRun || yes || !io.tty) return
+  say(["  Since can also check each commit before it is made: the staged files that name something are sent and not stored, and the", "  commit stops only for a proven finding in them.", ...what])
+  if (!saidYes(await io.prompt("  Add the pre-commit hook for you? [y/N] "))) return say(["  The pre-commit hook was not added."])
+  io.writeFile(file, preCommitHook(program), 0o755)
+  say(["  Added. Remove that file to stop."])
 }
 
 async function initFiles(io, program, { dryRun = false, yes = false } = {}) {

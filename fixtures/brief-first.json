@@ -1,0 +1,129 @@
+{
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-22T03:00:00.000Z",
+  "args": [
+    "hook",
+    "session-start"
+  ],
+  "stdin": {
+    "session_id": "s3",
+    "transcript_path": "/tmp/t.jsonl",
+    "cwd": "/repo",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  "files": {
+    "package.json": "{\n  \"name\": \"app\",\n  \"dependencies\": { \"next\": \"^14.2.3\", \"openai\": \"^4.20.0\" }\n}\n",
+    "package-lock.json": "{\n  \"name\": \"app\",\n  \"lockfileVersion\": 3,\n  \"packages\": {}\n}\n",
+    ".nvmrc": "18\n",
+    "src/llm.ts": "import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-4o-2024-05-13\", messages: [{ role: \"user\", content: q }] });\n",
+    "src/util.ts": "export const add = (a, b) => a + b;\n",
+    "README.md": "# app\n",
+    "node_modules/openai/package.json": "{\"name\":\"openai\"}\n"
+  },
+  "http": [
+    {
+      "request": "POST /v1/check",
+      "status": 200,
+      "body": {
+        "input": "files",
+        "checked": [
+          {
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:next",
+              "provider": "npm",
+              "name": "next",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/next"
+            },
+            "version": "14.2.35",
+            "range": "^14.2.3",
+            "status": "active",
+            "latest": "16.1.0",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 3
+              }
+            ]
+          },
+          {
+            "surface": {
+              "kind": "package",
+              "key": "package:npm:openai",
+              "provider": "npm",
+              "name": "openai",
+              "ecosystem": "npm",
+              "purl": "pkg:npm/openai"
+            },
+            "version": "4.104.0",
+            "range": "^4.20.0",
+            "status": "active",
+            "latest": "6.9.1",
+            "where": [
+              {
+                "file": "package.json",
+                "line": 3
+              }
+            ]
+          }
+        ],
+        "findings": [
+          {
+            "surface": {
+              "kind": "model",
+              "key": "model:openai:gpt-4o-2024-05-13",
+              "provider": "openai",
+              "name": "gpt-4o-2024-05-13"
+            },
+            "version": null,
+            "state": "affected",
+            "severity": "critical",
+            "reason": "gpt-4o-2024-05-13 on OpenAI API: retirement 2026-10-23",
+            "replacement": "gpt-5.6-sol",
+            "effectiveDate": "2026-10-23",
+            "daysLeft": -30,
+            "changeId": "fbb17ff6-8f68-4093-a77b-e3990a982a83",
+            "where": [
+              {
+                "file": "src/llm.ts",
+                "line": 3
+              }
+            ]
+          },
+          {
+            "surface": {
+              "kind": "runtime",
+              "key": "runtime:nodejs",
+              "provider": "nodejs",
+              "name": "Node.js"
+            },
+            "version": "18",
+            "state": "affected",
+            "severity": "high",
+            "reason": "Node.js 18 reached end of life on 2025-04-30",
+            "replacement": "24",
+            "effectiveDate": "2025-04-30",
+            "daysLeft": -571,
+            "changeId": "33333333-3333-4333-8333-333333333333",
+            "where": [
+              {
+                "file": ".nvmrc",
+                "line": 1
+              }
+            ]
+          }
+        ],
+        "unresolved": [],
+        "coverage": {
+          "sources": [],
+          "asOf": "2026-11-21T18:30:42.911Z",
+          "missing": []
+        }
+      }
+    }
+  ]
+}

@@ -82,6 +82,32 @@ class RealIo:
     def root(self):
         return _git(self.cwd, ["rev-parse", "--show-toplevel"]) or self.cwd
 
+    def _git_raw(self, args):
+        try:
+            done = subprocess.run(["git"] + args, cwd=self.cwd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return done.stdout.decode("utf-8", "replace") if done.returncode == 0 else None
+
+    def git_path(self, name):
+        """A path inside the repository's git folder, as git resolves it (a worktree's own, or core.hooksPath for hooks)."""
+        found = _git(self.cwd, ["rev-parse", "--git-path", name])
+        return os.path.abspath(os.path.join(self.cwd, found)) if found else None
+
+    def changed(self):
+        """The files git shows changed or new, as paths from the repository's top: `XY path` entries, each ended by a NUL."""
+        out = self._git_raw(["status", "--porcelain=v1", "-z", "--untracked-files=all", "--no-renames"]) or ""
+        return [entry[3:] for entry in out.split("\0") if len(entry) > 3 and entry[0] != "D" and entry[1] != "D"]
+
+    def staged(self):
+        """The files git has staged for the next commit (added, copied, changed or renamed), as paths from the repository's top."""
+        out = self._git_raw(["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR"]) or ""
+        return [path for path in out.split("\0") if path]
+
+    def staged_file(self, file):
+        """A staged file as git will commit it, which may differ from the file on disk."""
+        return self._git_raw(["show", ":%s" % file])
+
     def open(self, url):
         if self.env.get("CI"):
             return

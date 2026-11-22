@@ -65,6 +65,9 @@ export async function replay(fixture) {
     origin: () => fixture.origin ?? null,
     root: () => cwd,
     changed: () => fixture.changed ?? [],
+    staged: () => Object.keys(fixture.staged ?? {}),
+    gitPath: (name) => (fixture.git === false ? null : `${cwd}/.git/${name}`),
+    stagedFile: (file) => (fixture.staged && file in fixture.staged ? fixture.staged[file] : null),
     open: (url) => void log.push(`open ${url}`),
     prompt: async (question) => {
       log.push(`prompt ${question.trim()}`)

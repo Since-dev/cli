@@ -1,0 +1,4 @@
+$ since check --staged
+--- stderr
+Checking staged files needs a key. Sign in first: since login
+--- exit 2

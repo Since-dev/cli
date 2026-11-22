@@ -36,6 +36,28 @@ export function realIo() {
     },
     origin: () => git(cwd, ["remote", "get-url", "origin"]),
     root: () => git(cwd, ["rev-parse", "--show-toplevel"]) ?? cwd,
+    // A path inside the repository's git folder, as git resolves it (a worktree's own, or core.hooksPath for hooks).
+    gitPath(name) {
+      const found = git(cwd, ["rev-parse", "--git-path", name])
+      return found ? path.resolve(cwd, found) : null
+    },
+    // The files git has staged for the next commit (added, copied, changed or renamed), as paths from the repository's top.
+    staged() {
+      try {
+        return execFileSync("git", ["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })
+          .split("\0").filter(Boolean)
+      } catch {
+        return []
+      }
+    },
+    // A staged file as git will commit it, which may differ from the file on disk.
+    stagedFile(file) {
+      try {
+        return execFileSync("git", ["show", `:${file}`], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 })
+      } catch {
+        return null
+      }
+    },
     // The files git shows changed or new, as paths from the repository's top: `XY path` entries, each ended by a NUL.
     changed() {
       try {

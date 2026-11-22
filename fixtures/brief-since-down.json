@@ -1,0 +1,36 @@
+{
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-22T03:00:00.000Z",
+  "args": [
+    "hook",
+    "session-start"
+  ],
+  "stdin": {
+    "session_id": "s3",
+    "transcript_path": "/tmp/t.jsonl",
+    "cwd": "/repo",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  "files": {
+    "package.json": "{\n  \"name\": \"app\",\n  \"dependencies\": { \"next\": \"^14.2.3\", \"openai\": \"^4.20.0\" }\n}\n",
+    "package-lock.json": "{\n  \"name\": \"app\",\n  \"lockfileVersion\": 3,\n  \"packages\": {}\n}\n",
+    ".nvmrc": "18\n",
+    "src/llm.ts": "import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-4o-2024-05-13\", messages: [{ role: \"user\", content: q }] });\n",
+    "src/util.ts": "export const add = (a, b) => a + b;\n",
+    "README.md": "# app\n",
+    "node_modules/openai/package.json": "{\"name\":\"openai\"}\n"
+  },
+  "http": [
+    {
+      "request": "POST /v1/check",
+      "status": 503,
+      "body": {
+        "error": "scan_unavailable",
+        "message": "Try again."
+      }
+    }
+  ]
+}

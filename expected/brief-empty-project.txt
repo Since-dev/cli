@@ -1,0 +1,2 @@
+$ since hook session-start
+--- exit 0

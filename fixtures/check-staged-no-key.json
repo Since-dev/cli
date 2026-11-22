@@ -1,0 +1,13 @@
+{
+  "args": [
+    "check",
+    "--staged"
+  ],
+  "now": "2026-11-22T03:00:00.000Z",
+  "files": {
+    "src/llm.ts": "import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n"
+  },
+  "staged": {
+    "src/llm.ts": "import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n"
+  }
+}

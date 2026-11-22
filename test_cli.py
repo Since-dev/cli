@@ -88,6 +88,15 @@ class FakeIo:
     def changed(self):
         return self.fixture.get("changed", [])
 
+    def git_path(self, name):
+        return None if self.fixture.get("git") is False else "%s/.git/%s" % (self.cwd, name)
+
+    def staged(self):
+        return list((self.fixture.get("staged") or {}).keys())
+
+    def staged_file(self, file):
+        return (self.fixture.get("staged") or {}).get(file)
+
     def root(self):
         return self.cwd
 

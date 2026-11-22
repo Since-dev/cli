@@ -114,10 +114,12 @@ HOOK_FILE = ".claude/settings.local.json"
 HOOK_MATCHER = "Write|Edit|MultiEdit"
 HOOK_TIMEOUT_SECONDS = 10
 STOP_TIMEOUT_SECONDS = 15
-# The hooks Since adds: after each write, and when the agent finishes its turn (Stop takes no matcher).
+BRIEF_TIMEOUT_SECONDS = 20
+# The hooks Since adds: after each write, when the agent finishes its turn, and as a session starts (neither takes a matcher here).
 HOOKS = [
     ("PostToolUse", "post-tool-use", lambda command: {"matcher": HOOK_MATCHER, "hooks": [{"type": "command", "command": command, "timeout": HOOK_TIMEOUT_SECONDS}]}),
     ("Stop", "stop", lambda command: {"hooks": [{"type": "command", "command": command, "timeout": STOP_TIMEOUT_SECONDS}]}),
+    ("SessionStart", "session-start", lambda command: {"hooks": [{"type": "command", "command": command, "timeout": BRIEF_TIMEOUT_SECONDS}]}),
 ]
 
 
@@ -168,11 +170,12 @@ def offer_hook(io, program, dry_run, yes, hook):
         say(["  %s is not plain JSON, so the write-time hook was not added." % HOOK_FILE, ""])
         return
     word = WORDS[result["status"]][0 if hook and not dry_run else 1]
-    what = ["  %s%s  Claude Code checks each file it writes, and the whole change when it finishes (yours only, not committed)" % (word.ljust(14), HOOK_FILE), ""]
+    what = ["  %s%s  Claude Code checks each file it writes and the whole change when it finishes, and starts with a brief (yours only, not committed)" % (word.ljust(14), HOOK_FILE), ""]
     if hook and not dry_run:
         io.write_file("%s/%s" % (root, HOOK_FILE), result["text"], None)
         say(what + ["  Claude Code now sends each file it writes that names a model, a version, a runtime or a package to Since, and tells its agent",
-                    "  what is proven on the lines it wrote; when it finishes, the files it changed are checked together. No file is stored."])
+                    "  what is proven on the lines it wrote; when it finishes, the files it changed are checked together, and each session starts",
+                    "  with a short brief of what the project runs on. No file is stored."])
         return
     if dry_run or yes or not io.tty:
         return
@@ -185,10 +188,57 @@ def offer_hook(io, program, dry_run, yes, hook):
     say(["  Added. Remove it from that file to stop."])
 
 
-def init(io, program, dry_run=False, yes=False, hook=False):
+def init(io, program, dry_run=False, yes=False, hook=False, pre_commit=False):
     code = _init_files(io, program, dry_run=dry_run, yes=yes)
     offer_hook(io, program, dry_run, yes, hook)
+    offer_pre_commit(io, program, dry_run, yes, pre_commit)
     return code
+
+
+def pre_commit_hook(program):
+    """The git pre-commit hook `since init` writes: it checks what the commit stages, and nothing else."""
+    return "#!/bin/sh\n# Since.dev (since init --pre-commit): checks what this commit stages. Remove this file to stop.\nexec %s check --staged\n" % program
+
+
+OUR_PRE_COMMIT = re.compile(r"\bcheck --staged\b")
+
+
+def offer_pre_commit(io, program, dry_run, yes, pre_commit):
+    """A git pre-commit hook for the person, apart from the team's files: written only after its own yes (--pre-commit, or the answer to
+    its question), and never over a pre-commit hook that is already there, whose owner is told the one line to add instead."""
+    file = io.git_path("hooks/pre-commit") if hasattr(io, "git_path") else None
+
+    def say(lines):
+        io.out("%s\n" % "\n".join(lines))
+
+    if not file:
+        if pre_commit:
+            say(["  This folder is not a git repository, so no pre-commit hook was added."])
+        return
+    existing = io.read_file(file)
+    if existing is not None and OUR_PRE_COMMIT.search(existing):
+        return
+    root = io.root()
+    shown = file[len(root) + 1:] if file.startswith(root + "/") else file
+    if existing is not None:
+        if pre_commit or (not dry_run and not yes and io.tty):
+            say(["  %s is your own, so it was left alone. To check each commit, add this line to it:" % shown, "    %s check --staged" % program])
+        return
+    what = ["  %s%s  git checks what each commit stages (yours only, not committed)" % (("Wrote" if pre_commit and not dry_run else "Would write").ljust(14), shown), ""]
+    if pre_commit and not dry_run:
+        io.write_file(file, pre_commit_hook(program), 0o755)
+        say(what + ["  Each commit now sends the staged files that name a model, a version, a runtime or a package to Since, and stops only for a",
+                    "  proven finding in them at high or above. No file is stored."])
+        return
+    if dry_run or yes or not io.tty:
+        return
+    say(["  Since can also check each commit before it is made: the staged files that name something are sent and not stored, and the",
+         "  commit stops only for a proven finding in them."] + what)
+    if not said_yes(io.prompt("  Add the pre-commit hook for you? [y/N] ")):
+        say(["  The pre-commit hook was not added."])
+        return
+    io.write_file(file, pre_commit_hook(program), 0o755)
+    say(["  Added. Remove that file to stop."])
 
 
 def _init_files(io, program, dry_run=False, yes=False):

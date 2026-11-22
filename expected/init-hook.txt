@@ -10,10 +10,11 @@ $ since init --yes --hook
 
   Commit these files: everyone who clones this repository gets the same setup.
   The first tool call opens a sign-in in the browser. No key goes in any file.
-  Wrote         .claude/settings.local.json  Claude Code checks each file it writes, and the whole change when it finishes (yours only, not committed)
+  Wrote         .claude/settings.local.json  Claude Code checks each file it writes and the whole change when it finishes, and starts with a brief (yours only, not committed)
 
   Claude Code now sends each file it writes that names a model, a version, a runtime or a package to Since, and tells its agent
-  what is proven on the lines it wrote; when it finishes, the files it changed are checked together. No file is stored.
+  what is proven on the lines it wrote; when it finishes, the files it changed are checked together, and each session starts
+  with a short brief of what the project runs on. No file is stored.
 --- wrote .mcp.json
 {
   "mcpServers": {
@@ -121,6 +122,17 @@ Skip it for code that uses no package, model, API or runtime, for general progra
             "type": "command",
             "command": "since hook stop",
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "since hook session-start",
+            "timeout": 20
           }
         ]
       }

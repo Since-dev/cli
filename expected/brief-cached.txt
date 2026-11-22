@@ -1,0 +1,3 @@
+$ since hook session-start
+{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Since.dev brief for this project, as of 2026-11-21 (its manifests, runtime files and the files that name a model):\n- Runtimes and images: Node.js 18 (.nvmrc:1): 2025-04-30, passed; use 24.\n- Models: gpt-4o-2024-05-13 (src/llm.ts:3): 2026-10-23, passed; use gpt-5.6-sol.\n- A major release behind: next 14.2.35 (latest 16.1.0), openai 4.104.0 (latest 6.9.1).\n- In all, 2 findings affect this code (1 critical). Check before you write against any of these."}}
+--- exit 0

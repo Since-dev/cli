@@ -6,6 +6,7 @@ reached (an outage never fails a build). Every other command: 1 when it could no
 """
 
 import datetime
+import hashlib
 import json
 import re
 from urllib.parse import quote
@@ -13,14 +14,14 @@ from urllib.parse import quote
 from . import __version__ as VERSION
 from . import render as text
 from .init import dumps, init, loads
-from .local import MAX_CHARACTERS, check_body, file_sets, files_to_send, find_manifests, is_lockfile, parse_repo
-from .hook import HOOK_TIMEOUT_MS, STOP_TIMEOUT_MS, post_tool_use, stop_hook
+from .local import MAX_CHARACTERS, MAX_SET_FILES, check_body, file_sets, files_to_send, find_manifests, is_lockfile, parse_repo
+from .hook import BRIEF_TIMEOUT_MS, HOOK_TIMEOUT_MS, STOP_TIMEOUT_MS, _nearest_declarations, names_something, post_tool_use, session_start, stop_hook
 
 DEFAULT_API = "https://api.since.dev"
 SITE = "https://since.dev"
 APP = "https://app.since.dev"
 COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "hook", "help", "version"]
-SWITCHES = ["all", "json", "local", "watch", "dry-run", "yes", "hook", "block", "no-color", "help", "version"]
+SWITCHES = ["all", "json", "local", "watch", "staged", "dry-run", "yes", "hook", "pre-commit", "block", "no-color", "help", "version"]
 OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files"]
 FAIL_ON = ["low", "medium", "high", "critical", "none"]
 MAX_PAGES = 10
@@ -78,6 +79,7 @@ def help_text(p):
         [" watches remove <id>", "stop watching one"],
         [" hook post-tool-use", "run by your coding agent after each write: what it wrote, checked"],
         [" hook stop", "run by your coding agent when it finishes: the whole change, checked"],
+        [" hook session-start", "run by your coding agent as a session starts: this project's brief"],
     ]
     options = [
         ["--all", "show every finding"],
@@ -95,6 +97,8 @@ def help_text(p):
         ["--yes", "init: write without asking"],
         ["--hook", "init: also add the write-time hooks for Claude Code, for you only"],
         ["--block", "hook stop: the agent fixes what is found before it stops"],
+        ["--pre-commit", "init: also add a git pre-commit hook that runs check --staged"],
+        ["--staged", "check: only what git has staged, for a pre-commit hook"],
         ["--max-files <n>", "how many manifests and lockfiles to send (default 50)"],
         ["--no-color", "plain text"],
     ]
@@ -364,6 +368,55 @@ def local_check(ctx, no_origin):
     return report(ctx, {"kind": "local", "files": files, "notes": notes})
 
 
+def staged_check(ctx):
+    """`since check --staged`, for a git pre-commit hook: the staged files that name a model, a version, a runtime or a package, as git has
+    staged them, with the manifests and lockfiles nearest them, checked as one set. Only findings in the staged files count, so a commit
+    is never held for what it did not touch."""
+    io, p, check = ctx["io"], ctx["p"], ctx["check"]
+    if not ctx["key"]:
+        io.err("Checking staged files needs a key. Sign in first: %s login\n" % p)
+        return 2 if check else 1
+    root = (io.root() or io.cwd).rstrip("/")
+    staged = [path for path in (io.staged() if hasattr(io, "staged") else []) if not any(part in ("node_modules", ".git") for part in path.split("/"))]
+
+    def read(path):
+        return io.staged_file(path) if path in staged else io.read_file("%s/%s" % (root, path))
+
+    named = []
+    for path in staged:
+        content = read(path)
+        if content is not None and content.strip() and len(content) <= MAX_CHARACTERS and names_something(path, content):
+            named.append({"path": path, "content": content})
+    if not named:
+        io.out("Nothing staged names a model, a version, a runtime or a package.\n")
+        return 0
+    files = []
+    size = [0]
+
+    def add(file):
+        if len(files) >= MAX_SET_FILES or any(other["path"] == file["path"] for other in files) or size[0] + len(file["content"]) > MAX_CHARACTERS:
+            return
+        files.append(file)
+        size[0] += len(file["content"])
+
+    for file in named:
+        add(file)
+    notes = ["%s name something; the first %d were checked." % (text.plural(len(named), "staged file"), len(files))] if len(named) > len(files) else []
+    for file in named:
+        for path in _nearest_declarations(io, root, file["path"]):
+            content = read(path)
+            if content is not None and content.strip():
+                add({"path": path, "content": content})
+    answer = check_all(ctx, {"files": files, "detail": "summary"})
+    if not _has_findings(answer):
+        return refuse(ctx, answer)
+    mine = {file["path"] for file in named}
+    findings = [finding for finding in answer["json"]["findings"]
+                if any(isinstance(place, dict) and place.get("file") in mine for place in (finding.get("where") if isinstance(finding.get("where"), list) else []))]
+    kept = dict(answer["json"], findings=findings)
+    return report(ctx, {"kind": "local", "staged": True, "files": [{"path": None, "answer": kept}], "drafts": [{"files": [file["path"] for file in files], "answer": kept}], "notes": notes})
+
+
 def local_sets(ctx, found):
     """The folder's manifests and the lockfiles beside them, in sets of files."""
     io = ctx["io"]
@@ -404,6 +457,35 @@ def hook_state_path(io, session):
     return "%s/.cache/since-dev/hooks/%s.json" % (io.home, name)
 
 
+def brief_path(io, cwd):
+    """Where a project's brief is kept between sessions: by its folder, never its contents."""
+    return "%s/.cache/since-dev/briefs/%s.json" % (io.home, hashlib.sha256(str(cwd).encode("utf-8")).hexdigest()[:32])
+
+
+def brief_command(ctx, event):
+    """`since hook session-start`: the project's brief, said at the start of each session, checked again once a day or when its files
+    change."""
+    io = ctx["io"]
+    file = brief_path(io, event.get("cwd"))
+    cache = {}
+    try:
+        saved = json.loads(io.read_file(file) or "null")
+        if isinstance(saved, dict):
+            cache = saved
+    except ValueError:
+        pass
+    before = json.dumps(cache, separators=(",", ":"), ensure_ascii=False)
+    output = session_start(ctx, event, cache, lambda body: call(ctx, "POST", "/v1/check", body=body, key=ctx["key"], timeout_ms=BRIEF_TIMEOUT_MS))
+    if json.dumps(cache, separators=(",", ":"), ensure_ascii=False) != before:
+        try:
+            io.write_file(file, json.dumps(cache, separators=(",", ":"), ensure_ascii=False), 0o600)
+        except OSError:
+            pass
+    if output:
+        io.out("%s\n" % json.dumps(output, separators=(",", ":"), ensure_ascii=False))
+    return 0
+
+
 def changed_paths(io, cwd):
     """The files git shows changed or new under the project folder, as paths inside it."""
     if not isinstance(cwd, str) or not hasattr(io, "changed"):
@@ -422,8 +504,8 @@ def hook_command(ctx, name):
     """`since hook <event>`, run by a coding agent's hooks (Claude Code). It reads the event from stdin and always exits 0: a check that
     cannot answer in time says nothing, so the hook never stops the agent."""
     io = ctx["io"]
-    if name not in ("post-tool-use", "stop"):
-        io.err("%s hook takes post-tool-use or stop.\n" % ctx["p"])
+    if name not in ("post-tool-use", "stop", "session-start"):
+        io.err("%s hook takes post-tool-use, stop or session-start.\n" % ctx["p"])
         return 0
     try:
         event = json.loads(io.stdin())
@@ -431,6 +513,8 @@ def hook_command(ctx, name):
         return 0
     if not ctx["key"] or not isinstance(event, dict):
         return 0
+    if name == "session-start":
+        return brief_command(ctx, event)
     file = hook_state_path(io, event.get("session_id"))
     state = {"files": {}, "notes": []}
     try:
@@ -536,7 +620,7 @@ def report(ctx, data):
         checked = sum(first(whole_number(file["answer"].get("checkedCount")), 0) for file in data["files"])
         # Sets of files count the files sent; watched manifests, the manifests.
         sent = text.plural(sum(len(draft["files"]) for draft in data["drafts"]), "file") if data.get("drafts") is not None else text.plural(len(data["files"]), "manifest")
-        head = [c.bold("This folder"), "%s checked" % sent, current_as_of(io, answer_as_of([file["answer"] for file in data["files"]]))]
+        head = [c.bold("Staged" if data.get("staged") else "This folder"), "%s checked" % sent, current_as_of(io, answer_as_of([file["answer"] for file in data["files"]]))]
         lines.append("  %s" % "  ".join(part for part in head if part))
         lines.append("  %s   %s checked" % (counts, text.num(checked)))
         notes.extend(data["notes"])
@@ -546,7 +630,9 @@ def report(ctx, data):
             if isinstance(watch, dict) and watch.get("status") != "watching":
                 notes.append("%s: %s" % (file["path"], watch.get("message")))
         notes.extend(text.answer_notes([file["answer"] for file in data["files"]]))
-        notes.append("Only %s were checked. Connect the repository to check its code too: %s?utm_source=cli" % ("manifests and lockfiles" if data.get("drafts") is not None else "manifests", APP))
+        # A staged check reads the code it stages: the note is for the manifests-only checks.
+        if not data.get("staged"):
+            notes.append("Only %s were checked. Connect the repository to check its code too: %s?utm_source=cli" % ("manifests and lockfiles" if data.get("drafts") is not None else "manifests", APP))
     lines.append("")
     lines.extend(text.finding_lines(items, show_all, c, more))
     if data["kind"] == "local":
@@ -602,6 +688,11 @@ def repo_command(ctx):
     if not from_tree and args["flags"].get("local"):
         io.err("--local checks the folder you are in, so it takes no repository name.\n")
         return 2
+    if args["flags"].get("staged"):
+        if not from_tree or args["flags"].get("watch"):
+            io.err("--staged checks what git has staged in the folder you are in, so it takes %s.\n" % ("no --watch" if args["flags"].get("watch") else "no repository name"))
+            return 2
+        return staged_check(ctx)
     # A watch keeps what the manifests here hold, read from this folder: a connected repository is watched already, by connecting it.
     if args["flags"].get("watch"):
         if not from_tree:
@@ -901,7 +992,7 @@ def run(argv, io):
     if command == "changed":
         return changed_command(ctx)
     if command == "init":
-        return init(io, p, dry_run=bool(flags.get("dry-run")), yes=bool(flags.get("yes")), hook=bool(flags.get("hook")))
+        return init(io, p, dry_run=bool(flags.get("dry-run")), yes=bool(flags.get("yes")), hook=bool(flags.get("hook")), pre_commit=bool(flags.get("pre-commit")))
     if command == "login":
         return login_command(ctx)
     if command == "logout":

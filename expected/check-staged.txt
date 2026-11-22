@@ -1,0 +1,13 @@
+$ since check --staged
+
+  Staged  2 files checked  current as of 8 hours ago
+  1 with a date   1 checked
+
+  passed    gpt-3.5-turbo on OpenAI API: retirement 2026-10-23
+            src/llm.ts:3   use gpt-5.6-terra
+            https://developers.openai.com/api/docs/deprecations
+
+  Failed        1 finding at high or above
+--- log
+POST /v1/check key {"detail":"summary","files":[{"content":"import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n","path":"src/llm.ts"},{"content":"{\n  \"name\": \"app\",\n  \"dependencies\": { \"express\": \"4.19.2\" }\n}\n","path":"package.json"}]}
+--- exit 1

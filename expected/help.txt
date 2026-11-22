@@ -1,5 +1,5 @@
 $ since --help
-since-dev 0.5.1: what in this repository is about to stop working
+since-dev 0.6.0: what in this repository is about to stop working
 
 Usage
   npx since-dev                       check this repository (reads the origin remote)
@@ -14,6 +14,7 @@ Usage
   npx since-dev watches remove <id>   stop watching one
   npx since-dev hook post-tool-use    run by your coding agent after each write: what it wrote, checked
   npx since-dev hook stop             run by your coding agent when it finishes: the whole change, checked
+  npx since-dev hook session-start    run by your coding agent as a session starts: this project's brief
 
 Options
   --all                show every finding
@@ -31,6 +32,8 @@ Options
   --yes                init: write without asking
   --hook               init: also add the write-time hooks for Claude Code, for you only
   --block              hook stop: the agent fixes what is found before it stops
+  --pre-commit         init: also add a git pre-commit hook that runs check --staged
+  --staged             check: only what git has staged, for a pre-commit hook
   --max-files <n>      how many manifests and lockfiles to send (default 50)
   --no-color           plain text
 

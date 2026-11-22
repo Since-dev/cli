@@ -1,0 +1,20 @@
+{
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-22T03:00:00.000Z",
+  "args": [
+    "hook",
+    "session-start"
+  ],
+  "stdin": {
+    "session_id": "s3",
+    "transcript_path": "/tmp/t.jsonl",
+    "cwd": "/repo",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  "files": {
+    "README.md": "# app\n"
+  }
+}

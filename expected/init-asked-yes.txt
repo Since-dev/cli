@@ -14,12 +14,18 @@ $ since init
   The first tool call opens a sign-in in the browser. No key goes in any file.
   Since can also check each file Claude Code writes, the moment it writes it, and the whole change when it finishes: the files
   are sent to Since and not stored, and the agent hears only what is proven in what it wrote.
-  Would write   .claude/settings.local.json  Claude Code checks each file it writes, and the whole change when it finishes (yours only, not committed)
+  Would write   .claude/settings.local.json  Claude Code checks each file it writes and the whole change when it finishes, and starts with a brief (yours only, not committed)
 
   Added. Remove it from that file to stop.
+  Since can also check each commit before it is made: the staged files that name something are sent and not stored, and the
+  commit stops only for a proven finding in them.
+  Would write   .git/hooks/pre-commit  git checks what each commit stages (yours only, not committed)
+
+  Added. Remove that file to stop.
 --- log
 prompt Write these 7 files? [y/N]
 prompt Add the hook for you? [y/N]
+prompt Add the pre-commit hook for you? [y/N]
 --- wrote .mcp.json
 {
   "mcpServers": {
@@ -130,7 +136,22 @@ Skip it for code that uses no package, model, API or runtime, for general progra
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "since hook session-start",
+            "timeout": 20
+          }
+        ]
+      }
     ]
   }
 }
+--- wrote .git/hooks/pre-commit mode 755
+#!/bin/sh
+# Since.dev (since init --pre-commit): checks what this commit stages. Remove this file to stop.
+exec since check --staged
 --- exit 0
