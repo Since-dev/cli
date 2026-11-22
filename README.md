@@ -56,6 +56,7 @@ To keep it, `npm install -g since-dev` or `pip install since-dev` gives you the 
 | `since init` | Sets up your coding agent to check before it writes. See below. |
 | `since calendar` | What ends in the next 30 days: model retirements, runtime end of life, API removals. `--within 90d`, `--provider openai`. |
 | `since changed <package>` | Breaking changes and deprecations of a package. `--since 4.19.2` lists only what changed after that version, and `--to 4.21.2` only up to the version you move to, with each release in between and how fully Since read it. `--ecosystem pypi` picks the registry. Needs a key. |
+| `since stack <domain|org>` | What a company's public code names, by its website's domain or its GitHub organization: AI providers and models (each with whether it is retired or retiring), packages beside the newest release, runtimes past end of life, APIs and CI actions. `--since 2026-10-01` adds what it names now that it did not then. An organization not read yet is read in the next daily crawl, free. Needs a key; 20 credits a lookup. |
 | `since check` | The same check for CI: exit 1 when a finding fails. See below. |
 | `since login`, `since logout` | Sign in for private repositories, and remove the stored key. |
 | `since watches` | What your workspace watches: each watched check, what it holds, until when, and the new findings it has sent. Needs a key. |

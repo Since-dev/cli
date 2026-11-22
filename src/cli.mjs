@@ -11,11 +11,11 @@ import { BRIEF_TIMEOUT_MS, HOOK_TIMEOUT_MS, namesSomething, nearestDeclarations,
 import { briefAnswer, claudeEvents, CLIENTS, stopAnswer, writeAnswer } from "./clients.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.8.0"
+export const VERSION = "0.9.0"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
-const COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "hook", "help", "version"]
+const COMMANDS = ["check", "calendar", "changed", "stack", "init", "login", "logout", "watches", "hook", "help", "version"]
 const SWITCHES = ["all", "json", "local", "watch", "staged", "dry-run", "yes", "hook", "pre-commit", "block", "no-color", "help", "version"]
 const OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files", "client"]
 const FAIL_ON = ["low", "medium", "high", "critical", "none"]
@@ -56,6 +56,7 @@ function help(p) {
     [" check", "the same for CI: exit 1 when a finding fails"],
     [" calendar", "what ends in the next 30 days"],
     [" changed <package>", "breaking changes and deprecations of a package"],
+    [" stack <domain|org>", "what a company's public code names, and how current it is"],
     [" init", "set up your coding agent to check before it writes"],
     [" login", "sign in, for private repositories"],
     [" logout", "remove the stored key"],
@@ -74,7 +75,7 @@ function help(p) {
     ["--within <days>", "only dates within this many days, as 30d"],
     ["--provider <name>", "calendar: one provider, as openai"],
     ["--ecosystem <name>", "changed: the registry, as npm (default) or pypi"],
-    ["--since <version>", "changed: only what changed after this version"],
+    ["--since <version>", "changed: only what changed after this version; stack: a date, YYYY-MM-DD"],
     ["--to <version>", "changed: up to this version, with how each release was read"],
     ["--to <package@version>", "check: is the move clear for this folder's code, as --to npm:express@4.21.2"],
     ["--email <address>", "login: the email to sign in with"],
@@ -796,6 +797,57 @@ async function changedCommand(ctx) {
   return 0
 }
 
+/**
+ * A company's public stack (`GET /v1/stack`, Feature 8): by its website's domain or its GitHub organization, what its public code names
+ * and how current each piece is, and with --since what it names now that it did not then.
+ */
+async function stackCommand(ctx) {
+  const { io, args, p, c } = ctx
+  const target = args.positional[0]
+  if (!ctx.key) {
+    io.err(`${p} stack needs a key. Sign in first: ${p} login\n`)
+    return 1
+  }
+  const since = args.flags.since ?? null
+  const query = target.includes(".") ? { domain: target, since } : { org: target, since }
+  const answer = await call(ctx, "GET", "/v1/stack", { query, key: ctx.key })
+  if (answer.status !== 200 || !isObject(answer.json) || !Array.isArray(answer.json.organizations)) return refuse(ctx, answer)
+  if (args.flags.json) {
+    io.out(`${JSON.stringify(answer.json, null, 2)}\n`)
+    return 0
+  }
+  const json = answer.json
+  const row = (label, value) => `  ${label.padEnd(14)}${value}`
+  const lines = ["", `  ${c.bold(json.organizations.map((org) => `${org.login} (${org.domain})`).join(", "))}`]
+  if (json.indexing) {
+    lines.push(`  ${json.note}`, "")
+    io.out(lines.join("\n"))
+    return 0
+  }
+  const repositories = json.coverage.repositories
+  lines.push(`  ${text.num(repositories)} public ${repositories === 1 ? "repository" : "repositories"} read, as of ${String(json.asOf).slice(0, 10)}`, "")
+  if (json.providers.length) lines.push(row("AI providers", json.providers.map((provider) => provider.name).join(", ")))
+  for (const model of json.models) {
+    const standing = model.status === "current" ? "" : `  ${model.status}${model.retiresOn ? ` ${model.retiresOn}` : ""}${model.replacement ? `, move to ${model.replacement}` : ""}`
+    lines.push(row("Model", `${model.id}${standing}`))
+  }
+  for (const runtime of json.runtimes) {
+    lines.push(row("Runtime", `${runtime.name}${runtime.version ? ` ${runtime.version}` : ""}${runtime.ended ? `  past end of life${runtime.endsOn ? ` since ${runtime.endsOn}` : ""}` : ""}`))
+  }
+  const behind = json.packages.filter((pkg) => pkg.current === false).length
+  lines.push(row("Packages", `${text.num(json.packages.length)}${behind ? `, ${text.num(behind)} behind the newest release` : ""}`))
+  if (json.apis.length) lines.push(row("APIs", json.apis.join(", ")))
+  if (json.actions.length) lines.push(row("CI actions", json.actions.map((action) => (action.version ? `${action.name}@${action.version}` : action.name)).join(", ")))
+  if (json.changed) {
+    const words = (named) => [...named.providers, ...named.models, ...named.packages].join(", ")
+    const from = json.changed.month ? `since ${json.changed.month}` : `since ${json.changed.since}`
+    lines.push("", row("Added", `${words(json.changed.added) || "nothing"} (${from})`), row("Dropped", words(json.changed.removed) || "nothing"))
+  }
+  lines.push("", `  ${json.note}`, "")
+  io.out(lines.join("\n"))
+  return 0
+}
+
 /** Sign in without a password: Since emails nothing here, the person approves the link in a browser and the key comes back. */
 async function loginCommand(ctx) {
   const { io, args, p } = ctx
@@ -910,7 +962,10 @@ export async function run(argv, io) {
   }
   const command = args.command
   const words = args.positional
-  if (command === "changed") {
+  if (command === "stack") {
+    if (words.length !== 1) return usage(words.length ? `Too many words: ${words[1]}` : `${p} stack needs a company's domain or GitHub organization, as ${p} stack acme.com`)
+    if (args.flags.since !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(args.flags.since)) return usage("stack: --since takes a date, as 2026-10-01.")
+  } else if (command === "changed") {
     if (words.length !== 1) return usage(words.length ? `Too many words: ${words[1]}` : `${p} changed needs a package name, as ${p} changed react`)
     if (args.flags.to !== undefined && args.flags.since === undefined) return usage("--to needs --since, the version you move from.")
   } else if (command === "watches") {
@@ -943,6 +998,7 @@ export async function run(argv, io) {
   if (command === "hook") return hookCommand(ctx, words[0])
   if (command === "calendar") return calendarCommand(ctx)
   if (command === "changed") return changedCommand(ctx)
+  if (command === "stack") return stackCommand(ctx)
   if (command === "init") return init(io, p, { dryRun: Boolean(args.flags["dry-run"]), yes: Boolean(args.flags.yes), hook: Boolean(args.flags.hook), preCommit: Boolean(args.flags["pre-commit"]) })
   if (command === "login") return loginCommand(ctx)
   if (command === "logout") return logoutCommand(ctx)

@@ -1,0 +1,41 @@
+{
+  "args": [
+    "stack",
+    "newco"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-22T15:00:00.000Z",
+  "http": [
+    {
+      "request": "GET /v1/stack",
+      "status": 200,
+      "body": {
+        "organizations": [
+          {
+            "login": "newco",
+            "domain": "newco.dev"
+          }
+        ],
+        "month": null,
+        "asOf": null,
+        "coverage": {
+          "repositories": 0,
+          "months": []
+        },
+        "providers": [],
+        "models": [],
+        "packages": [],
+        "runtimes": [],
+        "apis": [],
+        "actions": [],
+        "changed": null,
+        "indexing": {
+          "retryAfterSec": 86400
+        },
+        "note": "What this company's public code names, not what it runs on: most companies keep their main code private. This organization is read in the next daily crawl; this answer is free."
+      }
+    }
+  ]
+}

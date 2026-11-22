@@ -1,0 +1,5 @@
+$ since stack acme.com --since last-week
+--- stderr
+stack: --since takes a date, as 2026-10-01.
+Run since --help for the commands.
+--- exit 2

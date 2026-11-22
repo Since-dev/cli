@@ -1,5 +1,5 @@
 $ since --help
-since-dev 0.8.0: what in this repository is about to stop working
+since-dev 0.9.0: what in this repository is about to stop working
 
 Usage
   npx since-dev                       check this repository (reads the origin remote)
@@ -7,6 +7,7 @@ Usage
   npx since-dev check                 the same for CI: exit 1 when a finding fails
   npx since-dev calendar              what ends in the next 30 days
   npx since-dev changed <package>     breaking changes and deprecations of a package
+  npx since-dev stack <domain|org>    what a company's public code names, and how current it is
   npx since-dev init                  set up your coding agent to check before it writes
   npx since-dev login                 sign in, for private repositories
   npx since-dev logout                remove the stored key
@@ -25,7 +26,7 @@ Options
   --within <days>      only dates within this many days, as 30d
   --provider <name>    calendar: one provider, as openai
   --ecosystem <name>   changed: the registry, as npm (default) or pypi
-  --since <version>    changed: only what changed after this version
+  --since <version>    changed: only what changed after this version; stack: a date, YYYY-MM-DD
   --to <version>       changed: up to this version, with how each release was read
   --to <package@version>check: is the move clear for this folder's code, as --to npm:express@4.21.2
   --email <address>    login: the email to sign in with

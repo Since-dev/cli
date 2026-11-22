@@ -1,0 +1,83 @@
+$ since stack acme --json
+{
+  "organizations": [
+    {
+      "login": "acme",
+      "domain": "acme.com"
+    }
+  ],
+  "month": "2026-11",
+  "asOf": "2026-11-21T05:52:10.000Z",
+  "coverage": {
+    "repositories": 4,
+    "months": [
+      "2026-11",
+      "2026-10"
+    ]
+  },
+  "providers": [
+    {
+      "provider": "openai",
+      "name": "OpenAI"
+    },
+    {
+      "provider": "anthropic",
+      "name": "Anthropic"
+    }
+  ],
+  "models": [
+    {
+      "id": "gpt-4o-mini",
+      "provider": "openai",
+      "status": "current",
+      "retiresOn": null,
+      "replacement": null
+    },
+    {
+      "id": "claude-3-haiku-20240307",
+      "provider": "anthropic",
+      "status": "retiring",
+      "retiresOn": "2026-12-15",
+      "replacement": "claude-haiku-4-5"
+    }
+  ],
+  "packages": [
+    {
+      "ecosystem": "npm",
+      "name": "openai",
+      "version": "4.104.0",
+      "latest": "6.9.1",
+      "current": false
+    },
+    {
+      "ecosystem": "npm",
+      "name": "express",
+      "version": "5.1.0",
+      "latest": "5.1.0",
+      "current": true
+    }
+  ],
+  "runtimes": [
+    {
+      "name": "nodejs",
+      "version": "18",
+      "ended": true,
+      "endsOn": "2025-04-30"
+    }
+  ],
+  "apis": [
+    "api.stripe.com"
+  ],
+  "actions": [
+    {
+      "name": "actions/checkout",
+      "version": "v4"
+    }
+  ],
+  "changed": null,
+  "indexing": null,
+  "note": "What this company's public code names, not what it runs on: most companies keep their main code private."
+}
+--- log
+GET /v1/stack?org=acme key
+--- exit 0

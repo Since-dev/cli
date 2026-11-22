@@ -1,0 +1,6 @@
+$ since stack nobody.example
+--- stderr
+No company organization with that website has been read yet. Look it up by its GitHub organization (org) to have it read.
+--- log
+GET /v1/stack?domain=nobody.example key
+--- exit 1

@@ -21,7 +21,7 @@ from .clients import CLIENTS, brief_answer, claude_events, stop_answer, write_an
 DEFAULT_API = "https://api.since.dev"
 SITE = "https://since.dev"
 APP = "https://app.since.dev"
-COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "hook", "help", "version"]
+COMMANDS = ["check", "calendar", "changed", "stack", "init", "login", "logout", "watches", "hook", "help", "version"]
 SWITCHES = ["all", "json", "local", "watch", "staged", "dry-run", "yes", "hook", "pre-commit", "block", "no-color", "help", "version"]
 OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files", "client"]
 FAIL_ON = ["low", "medium", "high", "critical", "none"]
@@ -73,6 +73,7 @@ def help_text(p):
         [" check", "the same for CI: exit 1 when a finding fails"],
         [" calendar", "what ends in the next 30 days"],
         [" changed <package>", "breaking changes and deprecations of a package"],
+        [" stack <domain|org>", "what a company's public code names, and how current it is"],
         [" init", "set up your coding agent to check before it writes"],
         [" login", "sign in, for private repositories"],
         [" logout", "remove the stored key"],
@@ -91,7 +92,7 @@ def help_text(p):
         ["--within <days>", "only dates within this many days, as 30d"],
         ["--provider <name>", "calendar: one provider, as openai"],
         ["--ecosystem <name>", "changed: the registry, as npm (default) or pypi"],
-        ["--since <version>", "changed: only what changed after this version"],
+        ["--since <version>", "changed: only what changed after this version; stack: a date, YYYY-MM-DD"],
         ["--to <version>", "changed: up to this version, with how each release was read"],
         ["--to <package@version>", "check: is the move clear for this folder's code, as --to npm:express@4.21.2"],
         ["--email <address>", "login: the email to sign in with"],
@@ -878,6 +879,59 @@ def calendar_command(ctx):
     return 0
 
 
+def stack_command(ctx):
+    """A company's public stack (GET /v1/stack, Feature 8): what its public code names and how current each piece is."""
+    io, args, p, c = ctx["io"], ctx["args"], ctx["p"], ctx["c"]
+    target = args["positional"][0]
+    if not ctx["key"]:
+        io.err("%s stack needs a key. Sign in first: %s login\n" % (p, p))
+        return 1
+    since = args["flags"].get("since")
+    query = {"domain": target, "since": since} if "." in target else {"org": target, "since": since}
+    answer = call(ctx, "GET", "/v1/stack", query=query, key=ctx["key"])
+    if answer["status"] != 200 or not isinstance(answer["json"], dict) or not isinstance(answer["json"].get("organizations"), list):
+        return refuse(ctx, answer)
+    if args["flags"].get("json"):
+        io.out("%s\n" % dumps(answer["json"], 2))
+        return 0
+    data = answer["json"]
+
+    def row(label, value):
+        return "  %s%s" % (label.ljust(14), value)
+
+    lines = ["", "  %s" % c.bold(", ".join("%s (%s)" % (org["login"], org["domain"]) for org in data["organizations"]))]
+    if data.get("indexing"):
+        lines += ["  %s" % data["note"], ""]
+        io.out("\n".join(lines))
+        return 0
+    repositories = data["coverage"]["repositories"]
+    lines += ["  %s public %s read, as of %s" % (text.num(repositories), "repository" if repositories == 1 else "repositories", str(data["asOf"])[:10]), ""]
+    if data["providers"]:
+        lines.append(row("AI providers", ", ".join(provider["name"] for provider in data["providers"])))
+    for model in data["models"]:
+        standing = "" if model["status"] == "current" else "  %s%s%s" % (model["status"], " %s" % model["retiresOn"] if model.get("retiresOn") else "",
+                                                                          ", move to %s" % model["replacement"] if model.get("replacement") else "")
+        lines.append(row("Model", "%s%s" % (model["id"], standing)))
+    for runtime in data["runtimes"]:
+        ended = "  past end of life%s" % (" since %s" % runtime["endsOn"] if runtime.get("endsOn") else "") if runtime.get("ended") else ""
+        lines.append(row("Runtime", "%s%s%s" % (runtime["name"], " %s" % runtime["version"] if runtime.get("version") else "", ended)))
+    behind = len([pkg for pkg in data["packages"] if pkg.get("current") is False])
+    lines.append(row("Packages", "%s%s" % (text.num(len(data["packages"])), ", %s behind the newest release" % text.num(behind) if behind else "")))
+    if data["apis"]:
+        lines.append(row("APIs", ", ".join(data["apis"])))
+    if data["actions"]:
+        lines.append(row("CI actions", ", ".join("%s@%s" % (action["name"], action["version"]) if action.get("version") else action["name"] for action in data["actions"])))
+    if data.get("changed"):
+        def words(named):
+            return ", ".join(named["providers"] + named["models"] + named["packages"])
+        changed = data["changed"]
+        since_text = "since %s" % (changed["month"] if changed.get("month") else changed["since"])
+        lines += ["", row("Added", "%s (%s)" % (words(changed["added"]) or "nothing", since_text)), row("Dropped", words(changed["removed"]) or "nothing")]
+    lines += ["", "  %s" % data["note"], ""]
+    io.out("\n".join(lines))
+    return 0
+
+
 def changed_command(ctx):
     io, args, p, c = ctx["io"], ctx["args"], ctx["p"], ctx["c"]
     name = args["positional"][0]
@@ -1055,7 +1109,12 @@ def run(argv, io):
         return 0
     command = args["command"]
     words = args["positional"]
-    if command == "changed":
+    if command == "stack":
+        if len(words) != 1:
+            return usage("Too many words: %s" % words[1] if words else "%s stack needs a company's domain or GitHub organization, as %s stack acme.com" % (p, p))
+        if "since" in flags and not re.match(r"^\d{4}-\d{2}-\d{2}$", str(flags["since"])):
+            return usage("stack: --since takes a date, as 2026-10-01.")
+    elif command == "changed":
         if len(words) != 1:
             return usage("Too many words: %s" % words[1] if words else "%s changed needs a package name, as %s changed react" % (p, p))
         if "to" in flags and "since" not in flags:
@@ -1104,6 +1163,8 @@ def run(argv, io):
         return calendar_command(ctx)
     if command == "changed":
         return changed_command(ctx)
+    if command == "stack":
+        return stack_command(ctx)
     if command == "init":
         return init(io, p, dry_run=bool(flags.get("dry-run")), yes=bool(flags.get("yes")), hook=bool(flags.get("hook")), pre_commit=bool(flags.get("pre-commit")))
     if command == "login":

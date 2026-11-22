@@ -1,0 +1,7 @@
+$ since stack newco
+
+  newco (newco.dev)
+  What this company's public code names, not what it runs on: most companies keep their main code private. This organization is read in the next daily crawl; this answer is free.
+--- log
+GET /v1/stack?org=newco key
+--- exit 0

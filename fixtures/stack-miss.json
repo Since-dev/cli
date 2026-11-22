@@ -1,0 +1,20 @@
+{
+  "args": [
+    "stack",
+    "nobody.example"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-22T15:00:00.000Z",
+  "http": [
+    {
+      "request": "GET /v1/stack",
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "message": "No company organization with that website has been read yet. Look it up by its GitHub organization (org) to have it read."
+      }
+    }
+  ]
+}

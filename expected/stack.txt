@@ -1,0 +1,20 @@
+$ since stack acme.com --since 2026-10-01
+
+  acme (acme.com)
+  4 public repositories read, as of 2026-11-21
+
+  AI providers  OpenAI, Anthropic
+  Model         gpt-4o-mini
+  Model         claude-3-haiku-20240307  retiring 2026-12-15, move to claude-haiku-4-5
+  Runtime       nodejs 18  past end of life since 2025-04-30
+  Packages      2, 1 behind the newest release
+  APIs          api.stripe.com
+  CI actions    actions/checkout@v4
+
+  Added         anthropic, claude-3-haiku-20240307, npm:@anthropic-ai/sdk (since 2026-10)
+  Dropped       npm:langchain
+
+  What this company's public code names, not what it runs on: most companies keep their main code private.
+--- log
+GET /v1/stack?domain=acme.com&since=2026-10-01 key
+--- exit 0
