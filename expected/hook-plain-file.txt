@@ -1,0 +1,3 @@
+$ since hook post-tool-use
+--- wrote /home/dev/.cache/since-dev/hooks/s1.json mode 600
+{"files":{},"notes":[]}--- exit 0

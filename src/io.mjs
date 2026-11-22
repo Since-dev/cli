@@ -29,13 +29,22 @@ export function realIo() {
     err: (text) => void process.stderr.write(text),
     now: () => Date.now(),
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-    async fetch({ method, url, headers, body }) {
+    async fetch({ method, url, headers, body, timeoutMs }) {
       // The API never redirects, so a redirect is never followed: a key goes to the host it was meant for and nowhere else.
-      const response = await fetch(url, { method, headers, body: body ?? undefined, redirect: "manual", signal: AbortSignal.timeout(120_000) })
+      const response = await fetch(url, { method, headers, body: body ?? undefined, redirect: "manual", signal: AbortSignal.timeout(timeoutMs ?? 120_000) })
       return { status: response.status, retryAfter: response.headers.get("retry-after"), text: await response.text() }
     },
     origin: () => git(cwd, ["remote", "get-url", "origin"]),
     root: () => git(cwd, ["rev-parse", "--show-toplevel"]) ?? cwd,
+    // The files git shows changed or new, as paths from the repository's top: `XY path` entries, each ended by a NUL.
+    changed() {
+      try {
+        const out = execFileSync("git", ["status", "--porcelain=v1", "-z", "--untracked-files=all", "--no-renames"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })
+        return out.split("\0").filter((entry) => entry.length > 3 && entry[0] !== "D" && entry[1] !== "D").map((entry) => entry.slice(3))
+      } catch {
+        return []
+      }
+    },
     open(url) {
       if (process.env.CI) return
       const [command, args] =
@@ -59,6 +68,14 @@ export function realIo() {
           terminal.close()
         })
       })
+    },
+    /** All of stdin, as a hook's event arrives. */
+    stdin() {
+      try {
+        return readFileSync(0, "utf8")
+      } catch {
+        return ""
+      }
     },
     readFile(file) {
       try {

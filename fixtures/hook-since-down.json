@@ -1,0 +1,34 @@
+{
+  "args": [
+    "hook",
+    "post-tool-use"
+  ],
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-22T01:00:00.000Z",
+  "stdin": {
+    "session_id": "s1",
+    "transcript_path": "/tmp/t.jsonl",
+    "cwd": "/repo",
+    "permission_mode": "default",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": "/repo/src/llm.ts",
+      "content": "import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n"
+    },
+    "tool_response": {}
+  },
+  "files": {},
+  "http": [
+    {
+      "request": "POST /v1/check",
+      "status": 503,
+      "body": {
+        "error": "scan_unavailable",
+        "message": "Try again."
+      }
+    }
+  ]
+}

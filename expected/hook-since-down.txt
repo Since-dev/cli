@@ -1,0 +1,5 @@
+$ since hook post-tool-use
+--- log
+POST /v1/check key {"detail":"summary","files":[{"content":"import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n","path":"src/llm.ts"}]}
+--- wrote /home/dev/.cache/since-dev/hooks/s1.json mode 600
+{"files":{},"notes":[],"written":["src/llm.ts"]}--- exit 0

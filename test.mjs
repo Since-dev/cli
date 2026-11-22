@@ -64,11 +64,13 @@ export async function replay(fixture) {
     },
     origin: () => fixture.origin ?? null,
     root: () => cwd,
+    changed: () => fixture.changed ?? [],
     open: (url) => void log.push(`open ${url}`),
     prompt: async (question) => {
       log.push(`prompt ${question.trim()}`)
       return fixture.answer ?? ""
     },
+    stdin: () => (typeof fixture.stdin === "string" ? fixture.stdin : fixture.stdin ? JSON.stringify(fixture.stdin) : ""),
     readFile: (file) => (files.has(file) ? files.get(file) : null),
     writeFile(file, text, mode) {
       files.set(file, text)

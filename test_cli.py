@@ -67,7 +67,7 @@ class FakeIo:
         self.log.append("sleep %d" % ms)
         self.clock += ms
 
-    def fetch(self, method, url, headers, body):
+    def fetch(self, method, url, headers, body, timeout_ms=None):
         assert url.startswith(API + "/"), url
         assert headers["User-Agent"] == "since-cli/%s (python)" % __version__, headers["User-Agent"]
         address = url[len(API):]
@@ -85,6 +85,9 @@ class FakeIo:
     def origin(self):
         return self.fixture.get("origin")
 
+    def changed(self):
+        return self.fixture.get("changed", [])
+
     def root(self):
         return self.cwd
 
@@ -94,6 +97,10 @@ class FakeIo:
     def prompt(self, question):
         self.log.append("prompt %s" % question.strip())
         return self.fixture.get("answer", "")
+
+    def stdin(self):
+        value = self.fixture.get("stdin")
+        return value if isinstance(value, str) else json.dumps(value, separators=(",", ":"), ensure_ascii=False) if value else ""
 
     def read_file(self, file):
         return self.files.get(file)

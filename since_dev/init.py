@@ -109,7 +109,89 @@ WORDS = {
 }
 
 
-def init(io, program, dry_run=False, yes=False):
+HOOK_FILE = ".claude/settings.local.json"
+"""Where Claude Code reads one person's own settings for a project: never committed, so the hook is theirs alone."""
+HOOK_MATCHER = "Write|Edit|MultiEdit"
+HOOK_TIMEOUT_SECONDS = 5
+STOP_TIMEOUT_SECONDS = 15
+# The hooks Since adds: after each write, and when the agent finishes its turn (Stop takes no matcher).
+HOOKS = [
+    ("PostToolUse", "post-tool-use", lambda command: {"matcher": HOOK_MATCHER, "hooks": [{"type": "command", "command": command, "timeout": HOOK_TIMEOUT_SECONDS}]}),
+    ("Stop", "stop", lambda command: {"hooks": [{"type": "command", "command": command, "timeout": STOP_TIMEOUT_SECONDS}]}),
+]
+
+
+def merge_hook(text, program):
+    """Claude Code's local settings with Since's hooks in them (hooks.PostToolUse and hooks.Stop): each added beside the person's own
+    hooks, left as it is when a Since hook is already there. status: new, updated, same, or skipped when the file is not plain JSON."""
+    empty = text is None or text.strip() == ""
+    data = {}
+    if not empty:
+        try:
+            data = loads(text)
+        except ValueError:
+            return {"status": "skipped", "text": text}
+    if not isinstance(data, dict) or ("hooks" in data and not isinstance(data["hooks"], dict)):
+        return {"status": "skipped", "text": text}
+    if any(event in data.get("hooks", {}) and not isinstance(data["hooks"][event], list) for event, _, _ in HOOKS):
+        return {"status": "skipped", "text": text}
+    added = False
+    for event, word, entry in HOOKS:
+        def ours(handler, word=word):
+            command_text = handler.get("command") if isinstance(handler, dict) else None
+            return isinstance(command_text, str) and re.search(r"\bhook %s\b" % re.escape(word), command_text) is not None and "since" in command_text
+
+        groups = data.get("hooks", {}).get(event, [])
+        if any(isinstance(group, dict) and isinstance(group.get("hooks"), list) and any(ours(handler) for handler in group["hooks"]) for group in groups):
+            continue
+        hooks = dict(data.get("hooks", {}))
+        hooks[event] = list(groups) + [entry("%s hook %s" % (program, word))]
+        data["hooks"] = hooks
+        added = True
+    if empty:
+        return {"status": "new", "text": "%s\n" % dumps(data, 2)}
+    return {"status": "updated", "text": "%s\n" % dumps(data, _indent_of(text))} if added else {"status": "same", "text": text}
+
+
+def offer_hook(io, program, dry_run, yes, hook):
+    """The write-time hook, asked for apart from the team's files and only for one person: written only after its own yes (--hook, or
+    the answer to its question)."""
+    root = io.root()
+    result = merge_hook(io.read_file("%s/%s" % (root, HOOK_FILE)), program)
+
+    def say(lines):
+        io.out("%s\n" % "\n".join(lines))
+
+    if result["status"] == "same":
+        return
+    if result["status"] == "skipped":
+        say(["  %s is not plain JSON, so the write-time hook was not added." % HOOK_FILE, ""])
+        return
+    word = WORDS[result["status"]][0 if hook and not dry_run else 1]
+    what = ["  %s%s  Claude Code checks each file it writes, and the whole change when it finishes (yours only, not committed)" % (word.ljust(14), HOOK_FILE), ""]
+    if hook and not dry_run:
+        io.write_file("%s/%s" % (root, HOOK_FILE), result["text"], None)
+        say(what + ["  Claude Code now sends each file it writes that names a model, a version, a runtime or a package to Since, and tells its agent",
+                    "  what is proven on the lines it wrote; when it finishes, the files it changed are checked together. No file is stored."])
+        return
+    if dry_run or yes or not io.tty:
+        return
+    say(["  Since can also check each file Claude Code writes, the moment it writes it, and the whole change when it finishes: the files",
+         "  are sent to Since and not stored, and the agent hears only what is proven in what it wrote."] + what)
+    if not said_yes(io.prompt("  Add the hook for you? [y/N] ")):
+        say(["  The hook was not added."])
+        return
+    io.write_file("%s/%s" % (root, HOOK_FILE), result["text"], None)
+    say(["  Added. Remove it from that file to stop."])
+
+
+def init(io, program, dry_run=False, yes=False, hook=False):
+    code = _init_files(io, program, dry_run=dry_run, yes=yes)
+    offer_hook(io, program, dry_run, yes, hook)
+    return code
+
+
+def _init_files(io, program, dry_run=False, yes=False):
     root = io.root()
     rows = [dict(target, result=merge_config(io.read_file("%s/%s" % (root, target["file"])), target["key"], target["entry"])) for target in TARGETS]
     for rule in RULES:

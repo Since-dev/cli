@@ -1,0 +1,28 @@
+{
+  "env": {
+    "SINCE_DEV_KEY": "fixture-key"
+  },
+  "now": "2026-11-22T02:00:00.000Z",
+  "args": [
+    "hook",
+    "stop"
+  ],
+  "stdin": {
+    "session_id": "s2",
+    "transcript_path": "/tmp/t.jsonl",
+    "cwd": "/repo",
+    "permission_mode": "default",
+    "hook_event_name": "Stop",
+    "stop_hook_active": true,
+    "last_assistant_message": "Done."
+  },
+  "files": {
+    "src/llm.ts": "import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n",
+    "package.json": "{\n  \"name\": \"app\",\n  \"dependencies\": { \"openai\": \"^4.20.0\" }\n}\n",
+    "package-lock.json": "{\n  \"name\": \"app\",\n  \"lockfileVersion\": 3,\n  \"packages\": {}\n}\n",
+    "README.md": "# app\n\nNotes.\n"
+  },
+  "changed": [
+    "src/llm.ts"
+  ]
+}

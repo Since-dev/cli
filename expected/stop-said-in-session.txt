@@ -1,0 +1,5 @@
+$ since hook stop
+--- log
+POST /v1/check key {"detail":"summary","files":[{"content":"import OpenAI from \"openai\";\nconst client = new OpenAI();\nexport const ask = (q) => client.chat.completions.create({ model: \"gpt-3.5-turbo\", messages: [{ role: \"user\", content: q }] });\n","path":"src/llm.ts"},{"content":"{\n  \"name\": \"app\",\n  \"dependencies\": { \"openai\": \"^4.20.0\" }\n}\n","path":"package.json"},{"content":"{\n  \"name\": \"app\",\n  \"lockfileVersion\": 3,\n  \"packages\": {}\n}\n","path":"package-lock.json"}]}
+--- wrote /home/dev/.cache/since-dev/hooks/s2.json mode 600
+{"files":{},"notes":["22222222-2222-4222-8222-222222222222\u0000src/llm.ts\u00003"],"written":["src/llm.ts"],"finished":"74bf266c8e59cf3b8460746ca859abe6"}--- exit 0

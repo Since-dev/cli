@@ -1,0 +1,2 @@
+$ since hook post-tool-use
+--- exit 0

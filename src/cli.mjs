@@ -6,14 +6,15 @@
 
 import { init } from "./init.mjs"
 import { MAX_CHARACTERS, checkBody, fileSets, filesToSend, findManifests, isLockfile, parseRepo } from "./local.mjs"
+import { HOOK_TIMEOUT_MS, postToolUse, STOP_TIMEOUT_MS, stopHook } from "./hook.mjs"
 import * as text from "./render.mjs"
 
-export const VERSION = "0.4.0"
+export const VERSION = "0.5.0"
 const DEFAULT_API = "https://api.since.dev"
 const SITE = "https://since.dev"
 const APP = "https://app.since.dev"
-const COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "help", "version"]
-const SWITCHES = ["all", "json", "local", "watch", "dry-run", "yes", "no-color", "help", "version"]
+const COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "hook", "help", "version"]
+const SWITCHES = ["all", "json", "local", "watch", "dry-run", "yes", "hook", "block", "no-color", "help", "version"]
 const OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files"]
 const FAIL_ON = ["low", "medium", "high", "critical", "none"]
 const MAX_PAGES = 10
@@ -58,6 +59,8 @@ function help(p) {
     [" logout", "remove the stored key"],
     [" watches", "list what this workspace watches"],
     [" watches remove <id>", "stop watching one"],
+    [" hook post-tool-use", "run by your coding agent after each write: what it wrote, checked"],
+    [" hook stop", "run by your coding agent when it finishes: the whole change, checked"],
   ]
   const options = [
     ["--all", "show every finding"],
@@ -73,6 +76,8 @@ function help(p) {
     ["--email <address>", "login: the email to sign in with"],
     ["--dry-run", "init: show what would be written"],
     ["--yes", "init: write without asking"],
+    ["--hook", "init: also add the write-time hooks for Claude Code, for you only"],
+    ["--block", "hook stop: the agent fixes what is found before it stops"],
     ["--max-files <n>", "how many manifests and lockfiles to send (default 50)"],
     ["--no-color", "plain text"],
   ]
@@ -123,7 +128,7 @@ function encodeQuery(query) {
 }
 
 /** One request. status 0 means Since could not be reached; json is the answer when it is a JSON object. */
-async function call(ctx, method, path, { query, body, key } = {}) {
+export async function call(ctx, method, path, { query, body, key, timeoutMs } = {}) {
   const search = query ? encodeQuery(query) : ""
   const headers = { "User-Agent": `since-cli/${VERSION} (${ctx.io.runtime})`, Accept: "application/json" }
   if (body !== undefined) headers["Content-Type"] = "application/json"
@@ -135,6 +140,7 @@ async function call(ctx, method, path, { query, body, key } = {}) {
       url: `${ctx.api}${path}${search ? `?${search}` : ""}`,
       headers,
       body: body === undefined ? null : JSON.stringify(body),
+      ...(timeoutMs ? { timeoutMs } : {}),
     })
   } catch {
     return { status: 0, json: null, retryAfter: null }
@@ -328,6 +334,59 @@ async function localSets(ctx, found) {
   }
   if (!drafts.length && last) return refuse(ctx, last)
   return report(ctx, { kind: "local", files: drafts.map((draft) => ({ path: null, answer: draft.answer })), drafts, notes })
+}
+
+/** A hook event's session file: what this session's hook checked and said, kept a day. */
+/** The files git shows changed or new under the project folder, as paths inside it. */
+function changedPaths(io, cwd) {
+  if (typeof cwd !== "string" || !io.changed) return []
+  const base = cwd.replace(/\/+$/, "")
+  const root = (io.root() ?? base).replace(/\/+$/, "")
+  return (io.changed() ?? []).flatMap((path) => {
+    const full = `${root}/${path}`
+    return full.startsWith(`${base}/`) ? [full.slice(base.length + 1)] : []
+  })
+}
+
+const hookStatePath = (io, session) => `${io.home}/.cache/since-dev/hooks/${String(session).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 80) || "session"}.json`
+
+/**
+ * `since hook <event>`, run by a coding agent's hooks (Claude Code). It reads the event from stdin and always exits 0: a check that cannot
+ * answer in time says nothing, so the hook never stops the agent.
+ */
+async function hookCommand(ctx, name) {
+  const { io } = ctx
+  if (name !== "post-tool-use" && name !== "stop") {
+    io.err(`${ctx.p} hook takes post-tool-use or stop.\n`)
+    return 0
+  }
+  let event = null
+  try {
+    event = JSON.parse(io.stdin())
+  } catch {
+    return 0
+  }
+  if (!ctx.key || !event || typeof event !== "object") return 0
+  const file = hookStatePath(io, event.session_id)
+  let state = { files: {}, notes: [] }
+  try {
+    const saved = JSON.parse(io.readFile(file) ?? "null")
+    if (saved && typeof saved === "object" && saved.files && Array.isArray(saved.notes)) state = saved
+  } catch {}
+  let output = null
+  if (name === "stop") {
+    const changed = changedPaths(io, event.cwd)
+    output = await stopHook(ctx, event, state, (body) => call(ctx, "POST", "/v1/check", { body, key: ctx.key, timeoutMs: STOP_TIMEOUT_MS }), changed,
+      { block: Boolean(ctx.args.flags.block) })
+  } else {
+    const note = await postToolUse(ctx, event, state, (body) => call(ctx, "POST", "/v1/check", { body, key: ctx.key, timeoutMs: HOOK_TIMEOUT_MS }))
+    if (note) output = { hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: note } }
+  }
+  try {
+    io.writeFile(file, JSON.stringify(state), 0o600)
+  } catch {}
+  if (output) io.out(`${JSON.stringify(output)}\n`)
+  return 0
 }
 
 /** Print what was found and return the exit code. */
@@ -683,6 +742,8 @@ export async function run(argv, io) {
   } else if (command === "watches") {
     if (words.length && words[0] !== "remove") return usage(`Unknown command: watches ${words[0]}`)
     if (words[0] === "remove" && words.length !== 2) return usage(words.length > 2 ? `Too many words: ${words[2]}` : `${p} watches remove needs a watch's id, as ${p} watches lists them.`)
+  } else if (command === "hook") {
+    if (words.length !== 1) return usage(words.length > 1 ? `Too many words: ${words[1]}` : `${p} hook needs the hook's event, as ${p} hook post-tool-use`)
   } else if (command === null || command === "check") {
     if (words.length > 1) return usage(`Too many words: ${words[1]}`)
     if (command === null && words.length === 1 && !words[0].includes("/")) return usage(`Unknown command: ${words[0]}`)
@@ -704,9 +765,10 @@ export async function run(argv, io) {
   const api = String(io.env.SINCE_API_URL || DEFAULT_API).replace(/\/+$/, "")
   const color = Boolean(io.tty) && !args.flags["no-color"] && !io.env.NO_COLOR && io.env.TERM !== "dumb"
   const ctx = { io, args, p, api, c: text.palette(color), check: command === "check", key: readKey(io, api), failOn, within, maxFiles }
+  if (command === "hook") return hookCommand(ctx, words[0])
   if (command === "calendar") return calendarCommand(ctx)
   if (command === "changed") return changedCommand(ctx)
-  if (command === "init") return init(io, p, { dryRun: Boolean(args.flags["dry-run"]), yes: Boolean(args.flags.yes) })
+  if (command === "init") return init(io, p, { dryRun: Boolean(args.flags["dry-run"]), yes: Boolean(args.flags.yes), hook: Boolean(args.flags.hook) })
   if (command === "login") return loginCommand(ctx)
   if (command === "logout") return logoutCommand(ctx)
   if (command === "watches") return words.length ? removeWatchCommand(ctx, words[1]) : watchesCommand(ctx)

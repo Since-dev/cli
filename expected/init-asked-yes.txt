@@ -12,8 +12,14 @@ $ since init
   Wrote 7 files.
   Commit these files: everyone who clones this repository gets the same setup.
   The first tool call opens a sign-in in the browser. No key goes in any file.
+  Since can also check each file Claude Code writes, the moment it writes it, and the whole change when it finishes: the files
+  are sent to Since and not stored, and the agent hears only what is proven in what it wrote.
+  Would write   .claude/settings.local.json  Claude Code checks each file it writes, and the whole change when it finishes (yours only, not committed)
+
+  Added. Remove it from that file to stop.
 --- log
 prompt Write these 7 files? [y/N]
+prompt Add the hook for you? [y/N]
 --- wrote .mcp.json
 {
   "mcpServers": {
@@ -99,4 +105,32 @@ Which tool:
 
 Skip it for code that uses no package, model, API or runtime, for general programming questions, and for the repository's own git history.
 <!-- since:end -->
+--- wrote .claude/settings.local.json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "since hook post-tool-use",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "since hook stop",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
 --- exit 0

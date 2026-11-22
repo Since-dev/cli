@@ -61,10 +61,17 @@ class RealIo:
     def sleep(self, ms):
         time.sleep(ms / 1000)
 
-    def fetch(self, method, url, headers, body):
+    def stdin(self):
+        """All of stdin, as a hook's event arrives."""
+        try:
+            return sys.stdin.read()
+        except (OSError, ValueError):
+            return ""
+
+    def fetch(self, method, url, headers, body, timeout_ms=None):
         request = urllib.request.Request(url, data=None if body is None else body.encode("utf-8"), headers=headers, method=method)
         try:
-            with _OPENER.open(request, timeout=120) as response:
+            with _OPENER.open(request, timeout=(timeout_ms / 1000.0) if timeout_ms else 120) as response:
                 return {"status": response.status, "retryAfter": response.headers.get("Retry-After"), "text": response.read().decode("utf-8", "replace")}
         except urllib.error.HTTPError as error:
             return {"status": error.code, "retryAfter": error.headers.get("Retry-After"), "text": error.read().decode("utf-8", "replace")}

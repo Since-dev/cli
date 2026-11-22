@@ -80,6 +80,46 @@ export function mergeWhole(text, whole) {
   return text === whole ? { status: "same", text } : { status: "updated", text: whole }
 }
 
+/** Where Claude Code reads one person's own settings for a project: never committed, so the hook is theirs alone. */
+export const HOOK_FILE = ".claude/settings.local.json"
+/** Claude Code's tools that write a file, as its hooks' matcher names them. */
+const HOOK_MATCHER = "Write|Edit|MultiEdit"
+/** Seconds Claude Code gives each hook before it moves on; each stays silent past its own wait (3 s after a write, 10 s at the finish). */
+const HOOK_TIMEOUT_SECONDS = 5
+const STOP_TIMEOUT_SECONDS = 15
+/** The hooks Since adds: after each write, and when the agent finishes its turn (Stop takes no matcher). */
+const HOOKS = [
+  { event: "PostToolUse", word: "post-tool-use", entry: (command) => ({ matcher: HOOK_MATCHER, hooks: [{ type: "command", command, timeout: HOOK_TIMEOUT_SECONDS }] }) },
+  { event: "Stop", word: "stop", entry: (command) => ({ hooks: [{ type: "command", command, timeout: STOP_TIMEOUT_SECONDS }] }) },
+]
+
+/**
+ * Claude Code's local settings with Since's hooks in them (`hooks.PostToolUse` and `hooks.Stop`): each added beside the person's own
+ * hooks, left as it is when a Since hook is already there. status: new, updated, same, or skipped when the file is not plain JSON.
+ */
+export function mergeHook(text, program) {
+  const empty = text === null || text.trim() === ""
+  let data = {}
+  if (!empty) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      return { status: "skipped", text }
+    }
+  }
+  if (!isObject(data) || (data.hooks !== undefined && !isObject(data.hooks))) return { status: "skipped", text }
+  if (HOOKS.some(({ event }) => data.hooks?.[event] !== undefined && !Array.isArray(data.hooks[event]))) return { status: "skipped", text }
+  let added = false
+  for (const { event, word, entry } of HOOKS) {
+    const ours = (handler) => isObject(handler) && typeof handler.command === "string" && new RegExp(`\\bhook ${word}\\b`).test(handler.command) && /since/.test(handler.command)
+    if ((data.hooks?.[event] ?? []).some((group) => isObject(group) && Array.isArray(group.hooks) && group.hooks.some(ours))) continue
+    data.hooks = { ...(data.hooks ?? {}), [event]: [...(data.hooks?.[event] ?? []), entry(`${program} hook ${word}`)] }
+    added = true
+  }
+  if (empty) return { status: "new", text: `${JSON.stringify(data, null, 2)}\n` }
+  return added ? { status: "updated", text: `${JSON.stringify(data, null, indentOf(text))}\n` } : { status: "same", text }
+}
+
 /** Whether an answer to a yes-or-no question is a yes. Anything else, an empty line included, is a no. */
 export const saidYes = (answer) => /^\s*y(es)?\s*$/i.test(String(answer ?? ""))
 
@@ -90,7 +130,35 @@ const WORDS = {
   skipped: ["Skipped", "Skipped"],
 }
 
-export async function init(io, program, { dryRun = false, yes = false } = {}) {
+/**
+ * The write-time hook, asked for apart from the team's files and only for one person: written only after its own yes (`--hook`, or the
+ * answer to its question).
+ */
+async function offerHook(io, program, { dryRun, yes, hook }) {
+  const root = io.root()
+  const result = mergeHook(io.readFile(`${root}/${HOOK_FILE}`), program)
+  const say = (lines) => io.out(`${lines.join("\n")}\n`)
+  if (result.status === "same") return
+  if (result.status === "skipped") return say([`  ${HOOK_FILE} is not plain JSON, so the write-time hook was not added.`, ""])
+  const what = [`  ${WORDS[result.status][hook && !dryRun ? 0 : 1].padEnd(14)}${HOOK_FILE}  Claude Code checks each file it writes, and the whole change when it finishes (yours only, not committed)`, ""]
+  if (hook && !dryRun) {
+    io.writeFile(`${root}/${HOOK_FILE}`, result.text, null)
+    return say([...what, "  Claude Code now sends each file it writes that names a model, a version, a runtime or a package to Since, and tells its agent", "  what is proven on the lines it wrote; when it finishes, the files it changed are checked together. No file is stored."])
+  }
+  if (dryRun || yes || !io.tty) return
+  say(["  Since can also check each file Claude Code writes, the moment it writes it, and the whole change when it finishes: the files", "  are sent to Since and not stored, and the agent hears only what is proven in what it wrote.", ...what])
+  if (!saidYes(await io.prompt("  Add the hook for you? [y/N] "))) return say(["  The hook was not added."])
+  io.writeFile(`${root}/${HOOK_FILE}`, result.text, null)
+  say(["  Added. Remove it from that file to stop."])
+}
+
+export async function init(io, program, { dryRun = false, yes = false, hook = false } = {}) {
+  const code = await initFiles(io, program, { dryRun, yes })
+  await offerHook(io, program, { dryRun, yes, hook })
+  return code
+}
+
+async function initFiles(io, program, { dryRun = false, yes = false } = {}) {
   const root = io.root()
   const rows = TARGETS.map((target) => ({ ...target, result: mergeConfig(io.readFile(`${root}/${target.file}`), target.key, target.entry) }))
   for (const rule of RULES) {

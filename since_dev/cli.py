@@ -14,12 +14,13 @@ from . import __version__ as VERSION
 from . import render as text
 from .init import dumps, init, loads
 from .local import MAX_CHARACTERS, check_body, file_sets, files_to_send, find_manifests, is_lockfile, parse_repo
+from .hook import HOOK_TIMEOUT_MS, STOP_TIMEOUT_MS, post_tool_use, stop_hook
 
 DEFAULT_API = "https://api.since.dev"
 SITE = "https://since.dev"
 APP = "https://app.since.dev"
-COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "help", "version"]
-SWITCHES = ["all", "json", "local", "watch", "dry-run", "yes", "no-color", "help", "version"]
+COMMANDS = ["check", "calendar", "changed", "init", "login", "logout", "watches", "hook", "help", "version"]
+SWITCHES = ["all", "json", "local", "watch", "dry-run", "yes", "hook", "block", "no-color", "help", "version"]
 OPTIONS = ["fail-on", "within", "provider", "ecosystem", "since", "to", "email", "max-files"]
 FAIL_ON = ["low", "medium", "high", "critical", "none"]
 MAX_PAGES = 10
@@ -75,6 +76,8 @@ def help_text(p):
         [" logout", "remove the stored key"],
         [" watches", "list what this workspace watches"],
         [" watches remove <id>", "stop watching one"],
+        [" hook post-tool-use", "run by your coding agent after each write: what it wrote, checked"],
+        [" hook stop", "run by your coding agent when it finishes: the whole change, checked"],
     ]
     options = [
         ["--all", "show every finding"],
@@ -90,6 +93,8 @@ def help_text(p):
         ["--email <address>", "login: the email to sign in with"],
         ["--dry-run", "init: show what would be written"],
         ["--yes", "init: write without asking"],
+        ["--hook", "init: also add the write-time hooks for Claude Code, for you only"],
+        ["--block", "hook stop: the agent fixes what is found before it stops"],
         ["--max-files <n>", "how many manifests and lockfiles to send (default 50)"],
         ["--no-color", "plain text"],
     ]
@@ -156,7 +161,7 @@ def encode_query(query):
     )
 
 
-def call(ctx, method, path, query=None, body=None, key=None):
+def call(ctx, method, path, query=None, body=None, key=None, timeout_ms=None):
     """One request. status 0 means Since could not be reached; json is the answer when it is a JSON object."""
     search = encode_query(query) if query else ""
     headers = {"User-Agent": "since-cli/%s (%s)" % (VERSION, ctx["io"].runtime), "Accept": "application/json"}
@@ -165,7 +170,9 @@ def call(ctx, method, path, query=None, body=None, key=None):
     if key:
         headers["Authorization"] = "Bearer %s" % key["value"]
     try:
-        answer = ctx["io"].fetch(method, "%s%s%s" % (ctx["api"], path, "?" + search if search else ""), headers, None if body is None else json.dumps(body))
+        url = "%s%s%s" % (ctx["api"], path, "?" + search if search else "")
+        payload = None if body is None else json.dumps(body)
+        answer = ctx["io"].fetch(method, url, headers, payload, timeout_ms) if timeout_ms else ctx["io"].fetch(method, url, headers, payload)
     except Exception as error:  # noqa: BLE001 - any failure to reach Since reads the same to the caller
         return {"status": 0, "json": None, "retryAfter": None, "certificate": "CERTIFICATE_VERIFY_FAILED" in str(error)}
     retry = re.match(r"\s*([+-]?[0-9]+)", str(first(answer.get("retryAfter"), "")))
@@ -389,6 +396,65 @@ def local_sets(ctx, found):
     if not drafts and last is not None:
         return refuse(ctx, last)
     return report(ctx, {"kind": "local", "files": [{"path": None, "answer": draft["answer"]} for draft in drafts], "drafts": drafts, "notes": notes})
+
+
+def hook_state_path(io, session):
+    """A hook event's session file: what this session's hook checked and said."""
+    name = re.sub(r"[^A-Za-z0-9_-]", "", str(session if session is not None else ""))[:80] or "session"
+    return "%s/.cache/since-dev/hooks/%s.json" % (io.home, name)
+
+
+def changed_paths(io, cwd):
+    """The files git shows changed or new under the project folder, as paths inside it."""
+    if not isinstance(cwd, str) or not hasattr(io, "changed"):
+        return []
+    base = cwd.rstrip("/")
+    root = (io.root() or base).rstrip("/")
+    out = []
+    for path in io.changed() or []:
+        full = "%s/%s" % (root, path)
+        if full.startswith(base + "/"):
+            out.append(full[len(base) + 1:])
+    return out
+
+
+def hook_command(ctx, name):
+    """`since hook <event>`, run by a coding agent's hooks (Claude Code). It reads the event from stdin and always exits 0: a check that
+    cannot answer in time says nothing, so the hook never stops the agent."""
+    io = ctx["io"]
+    if name not in ("post-tool-use", "stop"):
+        io.err("%s hook takes post-tool-use or stop.\n" % ctx["p"])
+        return 0
+    try:
+        event = json.loads(io.stdin())
+    except ValueError:
+        return 0
+    if not ctx["key"] or not isinstance(event, dict):
+        return 0
+    file = hook_state_path(io, event.get("session_id"))
+    state = {"files": {}, "notes": []}
+    try:
+        saved = json.loads(io.read_file(file) or "null")
+        if isinstance(saved, dict) and isinstance(saved.get("files"), dict) and isinstance(saved.get("notes"), list):
+            state = saved
+    except ValueError:
+        pass
+    output = None
+    if name == "stop":
+        changed = changed_paths(io, event.get("cwd"))
+        output = stop_hook(ctx, event, state, lambda body: call(ctx, "POST", "/v1/check", body=body, key=ctx["key"], timeout_ms=STOP_TIMEOUT_MS), changed,
+                           block=bool(ctx["args"]["flags"].get("block")))
+    else:
+        note = post_tool_use(ctx, event, state, lambda body: call(ctx, "POST", "/v1/check", body=body, key=ctx["key"], timeout_ms=HOOK_TIMEOUT_MS))
+        if note:
+            output = {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": note}}
+    try:
+        io.write_file(file, json.dumps(state, separators=(",", ":"), ensure_ascii=False), 0o600)
+    except OSError:
+        pass
+    if output:
+        io.out("%s\n" % json.dumps(output, separators=(",", ":"), ensure_ascii=False))
+    return 0
 
 
 def answer_as_of(answers):
@@ -797,6 +863,9 @@ def run(argv, io):
             return usage("Unknown command: watches %s" % words[0])
         if words and len(words) != 2:
             return usage("Too many words: %s" % words[2] if len(words) > 2 else "%s watches remove needs a watch's id, as %s watches lists them." % (p, p))
+    elif command == "hook":
+        if len(words) != 1:
+            return usage("Too many words: %s" % words[1] if len(words) > 1 else "%s hook needs the hook's event, as %s hook post-tool-use" % (p, p))
     elif command is None or command == "check":
         if len(words) > 1:
             return usage("Too many words: %s" % words[1])
@@ -825,12 +894,14 @@ def run(argv, io):
         "io": io, "args": args, "p": p, "api": api, "c": text.Palette(color), "check": command == "check",
         "key": read_key(io, api), "fail_on": fail_on, "within": within, "max_files": max_files,
     }
+    if command == "hook":
+        return hook_command(ctx, words[0])
     if command == "calendar":
         return calendar_command(ctx)
     if command == "changed":
         return changed_command(ctx)
     if command == "init":
-        return init(io, p, dry_run=bool(flags.get("dry-run")), yes=bool(flags.get("yes")))
+        return init(io, p, dry_run=bool(flags.get("dry-run")), yes=bool(flags.get("yes")), hook=bool(flags.get("hook")))
     if command == "login":
         return login_command(ctx)
     if command == "logout":
